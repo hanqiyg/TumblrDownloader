@@ -50,7 +50,7 @@ public class MainWindow {
 	}
 	private void initialize() {
 		settings = new Settings();
-		services = new TumblrServices();
+		//services = new TumblrServices();
 		frame = new JFrame();
 		frame.setBounds(Settings.x, Settings.y, Settings.w, Settings.h);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

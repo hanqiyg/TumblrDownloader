@@ -18,7 +18,7 @@ public class Settings {
 	public static int connect_timeout = 20000;
 	public static int read_timeout = 20000;
 	
-	public static String save_location = "d:/a";
+	public static String save_location = "d:/tumblr";
 	public static boolean useProxy = true;
 	
 	public static int x,y,w,h;

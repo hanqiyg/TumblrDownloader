@@ -1,75 +1,151 @@
 package com.icesoft.tumblr.downloader.service;
 
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.IOException;
+import java.io.StringReader;
+import org.apache.log4j.Logger;
+import org.htmlparser.Node;
+import org.htmlparser.NodeFilter;
+import org.htmlparser.Parser;
+import org.htmlparser.PrototypicalNodeFactory;
+import org.htmlparser.filters.NodeClassFilter;
+import org.htmlparser.util.NodeList;
+import org.htmlparser.util.ParserException;
 
-import com.tumblr.jumblr.types.Photo;
-import com.tumblr.jumblr.types.PhotoPost;
-import com.tumblr.jumblr.types.Post;
-import com.tumblr.jumblr.types.Video;
-import com.tumblr.jumblr.types.VideoPost;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.icesoft.htmlparser.tags.SourceTag;
+import com.icesoft.htmlparser.tags.VideoTag;
+import com.icesoft.tumblr.model.VideoInfo;
 
-public class UrlService {
+public class UrlService 
+{
+	private static Logger logger = Logger.getLogger(UrlService.class);  
+	public static VideoInfo getVideoInfoFromEmbed(String embed) throws ParserException, IOException
+	{
+		VideoInfo vi = new VideoInfo();
+		Parser parser = new Parser(embed);	
+        PrototypicalNodeFactory p=new PrototypicalNodeFactory();  
+        p.registerTag(new VideoTag());   
+        parser.setNodeFactory(p);
+		NodeFilter videoFilter = new NodeClassFilter(VideoTag.class);
+		NodeList nodes = parser.extractAllNodesThatMatch(videoFilter);
+        Node eachNode = null;
+		if(nodes != null){
+			for (int i = 0; i < nodes.size(); i++) 
+            {
+                eachNode = (Node)nodes.elementAt(i);
+                if(eachNode!= null && eachNode instanceof VideoTag){
+                	VideoTag t = (VideoTag) eachNode;            		
+                	if(t.getPoster()!= null)
+                	{
+                    	vi.posterUrl = t.getPoster();
+                	}
 
-	public static String getUrlFromPost(Post p) {
-		if(p instanceof VideoPost){
-			VideoPost v = (VideoPost) p;
-			List<Video> videos = v.getVideos();
-			for(Video vi:videos){
-				String urlString = findURL(vi.getEmbedCode());
-				String typeString = findType(vi.getEmbedCode());
-				if(urlString!= null && typeString!= null){
-					return urlString + "." + typeString;
-				}						
-			}
+                	String opt = t.getOption();
+                	//System.out.println(opt);
+                	
+/*                	JsonReader jsonReader = new JsonReader(new StringReader(opt));
+                    while(jsonReader.hasNext()){
+                        JsonToken nextToken = jsonReader.peek();
+                        System.out.println(nextToken);
+                        if(JsonToken.BEGIN_OBJECT.equals(nextToken)){
+                            jsonReader.beginObject();
+                        } else if(JsonToken.NAME.equals(nextToken)){
+                            String name  =  jsonReader.nextName();
+                            System.out.println(name);
+                        } else if(JsonToken.STRING.equals(nextToken)){
+                            String value =  jsonReader.nextString();
+                            System.out.println(value);
+                        } else if(JsonToken.NUMBER.equals(nextToken)){
+                            long value =  jsonReader.nextLong();
+                            System.out.println(value);
+                        }else if(JsonToken.BOOLEAN.equals(nextToken)){
+                        	 boolean value =  jsonReader.nextBoolean();
+                             System.out.println(value);
+                        }else if(JsonToken.END_OBJECT.equals(nextToken)){                        	
+                        	jsonReader.endObject();
+                        }else if(JsonToken.BEGIN_ARRAY.equals(nextToken)){                        	
+                        	jsonReader.beginArray();
+                        }else if(JsonToken.END_ARRAY.equals(nextToken)){                        	
+                        	jsonReader.endArray();
+                        }else{
+                        	System.out.println(nextToken);
+                        	jsonReader.skipValue();
+                        }
+                    }
+                    jsonReader.close();*/
+                	
+                	JsonReader reader = new JsonReader(new StringReader(opt));
+                	reader.setLenient(true);
+            		reader.beginObject();
+            
+                	while(reader.hasNext()){
+            			String tagName = reader.nextName();
+            			if(tagName.equals("hdUrl")){            				
+            				vi.hdUrl = getStringToken(reader,vi.hdUrl);
+            			}else if(tagName.equals("filmstrip"))
+            			{
+            		 		reader.beginObject();
+            				while(reader.hasNext())
+            				{
+            					if(reader.nextName().equals("url"))
+            					{	
+            						vi.hdPosterUrl = getStringToken(reader,vi.hdPosterUrl);              					
+            					}else
+            					{
+            						reader.skipValue();
+            					}
+            				}
+            				reader.endObject();
+            			}else{
+            				reader.skipValue();
+            			}
+                	}
+                	reader.endObject();
+                	reader.close();
+                }              
+            }
 		}
-		if(p instanceof PhotoPost){
-			PhotoPost photoPost = (PhotoPost) p;
-			List<Photo> photos = photoPost.getPhotos();
-			for(Photo photo:photos){
-				return photo.getOriginalSize().getUrl();
+
+		Parser parser2 = new Parser(embed);	
+        PrototypicalNodeFactory p2 = new PrototypicalNodeFactory();  
+        p2.registerTag(new SourceTag());   
+        parser2.setNodeFactory(p2);
+		NodeFilter sourceFilter = new NodeClassFilter(SourceTag.class);  
+    	NodeList vss = parser2.extractAllNodesThatMatch(sourceFilter);
+    	
+    	if(vss != null && vss.size() > 0)
+    	{
+        	for(int j=0;j<vss.size();j++)
+        	{
+        		Node n = vss.elementAt(j);
+        		if(n instanceof SourceTag)
+        		{
+        			SourceTag st = (SourceTag) n;
+        			if(st.getSrc() != null){
+            			vi.baseUrl = st.getSrc();
+        			}
+        			if(st.getType() != null){
+        				vi.mineType = st.getType();
+        			}
+        		}else
+        		{
+        			//System.out.println("not instanceof SourceTag");
+        		}
+        	}
+    	}else
+    	{
+    		//System.out.println("vss null");
+    	}
+		return vi;	
+	}
+	public static String getStringToken(JsonReader reader,String s) throws IOException{
+			JsonToken nextToken = reader.peek();
+			if(JsonToken.STRING.equals(nextToken)){
+				s = reader.nextString();
+			}else{
+				reader.skipValue();
 			}
-		}
-		return null;
+		return s;
 	}
-
-	public static String getFileNameFromPost(Post post) {		
-		return "name";
-	}
-
-	public static String getSavePathFromPost(Post post) {
-		return "d:/";
-	}
-	public static String findURL(String url){
-		String URL = null;
-		String pattern1 = "\\<source src=\"";
-		String pattern2 = "\" type";
-		Pattern r1 = Pattern.compile(pattern1);
-		Pattern r2 = Pattern.compile(pattern2);
-	    Matcher m1 = r1.matcher(url);
-	    Matcher m2 = r2.matcher(url);
-	    if (m1.find( ) && m2.find()) {
-	    	  int start = m1.end();
-	    	  int end = m2.start();
-	    	  URL = url.substring(start, end);
-	    }
-	    return URL;
-	}
-	public static String findType(String url){
-		String type = null;
-		String pattern1 = "type=\"video/";
-		String pattern2 = "\">";
-		Pattern r1 = Pattern.compile(pattern1);
-		Pattern r2 = Pattern.compile(pattern2);
-	    Matcher m1 = r1.matcher(url);
-	    Matcher m2 = r2.matcher(url);
-	    if (m1.find( ) && m2.find()) {
-	    	  int start = m1.end();
-	    	  int end = m2.start();
-	    	  type = url.substring(start, end);
-	    }
-	    return type;
-	}
-
 }

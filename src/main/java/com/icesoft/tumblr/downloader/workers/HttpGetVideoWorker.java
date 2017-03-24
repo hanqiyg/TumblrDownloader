@@ -29,15 +29,16 @@ public class HttpGetVideoWorker implements IHttpGetWorker{
 	private String 	filepath;
 	private long   	filesize = 0;
 	private long   	currsize = 0;
-	private String 	message;
+	private boolean stop = false;
 	
 	private float speed = 0;
-	
-	private boolean stop = false;
+	private String 	message;
+
 	private HttpClient client;
 	private HttpHost proxy;
 	private HttpGet get;
 	private File file;
+	
 	public HttpGetVideoWorker(String url,String filepath){
 		logger.info(Thread.currentThread().getName() + " : create HttpGetVideoWorker instance.");
 		this.url = url;

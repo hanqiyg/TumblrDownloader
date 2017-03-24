@@ -3,6 +3,8 @@ package com.icesoft.tumblr.downloader.panel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 
+import org.htmlparser.util.ParserException;
+
 import com.icesoft.tumblr.downloader.DownloadManager;
 import com.icesoft.tumblr.downloader.Settings;
 import com.icesoft.tumblr.downloader.datamodel.ControllCellEditor;
@@ -11,6 +13,7 @@ import com.icesoft.tumblr.downloader.datamodel.LikesPostModel.PostStatus;
 import com.icesoft.tumblr.downloader.datamodel.LikesPostModel.STATUS;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.downloader.service.UrlService;
+import com.icesoft.tumblr.model.VideoInfo;
 import com.tumblr.jumblr.types.Post;
 import com.tumblr.jumblr.types.Video;
 import com.tumblr.jumblr.types.VideoPost;
@@ -24,6 +27,7 @@ import javax.swing.JLabel;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.awt.event.ActionEvent;
 
@@ -31,7 +35,6 @@ public class LikesPanel extends JPanel {
 	private static final long serialVersionUID = 4111940040655069650L;
 	private JTable table;
 	private JProgressBar progressBar;
-	private TumblrServices 	services;
 	
 	private Thread likesThread;
 	private int likes;
@@ -48,7 +51,6 @@ public class LikesPanel extends JPanel {
 	private JButton btnAddAll;
 	
 	public LikesPanel(Settings settings,TumblrServices services) {
-		this.services = services;
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] {0};
 		gridBagLayout.rowHeights = new int[] {0};
@@ -68,7 +70,7 @@ public class LikesPanel extends JPanel {
 		btnStart = new JButton("Start");
 		btnStart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				likes = LikesPanel.this.services.getLikesCount();
+				likes = TumblrServices.getInstance().getLikesCount();
 				index = 0;
 				load = true;
 				initThread();
@@ -122,9 +124,14 @@ public class LikesPanel extends JPanel {
 						for(Video vi:videos){
 							String embed = vi.getEmbedCode();
 							System.out.println(embed);
-							String url = UrlService.findURL(vi.getEmbedCode());
-							String ext = UrlService.findType(vi.getEmbedCode());
-							DownloadManager.getInstance().addVideoTask(url, Settings.save_location + File.separator + blogname);
+							VideoInfo info;
+							try {
+								info = UrlService.getVideoInfoFromEmbed(embed);
+								DownloadManager.getInstance().addVideoTask(info.baseUrl, Settings.save_location + File.separator + blogname);
+							} catch (ParserException | IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
 						}
 						post.setStatus(STATUS.DOWNLOADING);
 					}
@@ -187,7 +194,7 @@ public class LikesPanel extends JPanel {
 					while(load){
 						if(index >= 0 && index<likes){
 							long begin = System.currentTimeMillis();
-							Post p = LikesPanel.this.services.getLikeById(index);
+							Post p = TumblrServices.getInstance().getLikeById(index);
 							if(p != null){
 								LikesPostModel model = (LikesPostModel) table.getModel();
 								model.addPost(p);
