@@ -89,7 +89,6 @@ public class ControllCellEditor extends AbstractCellEditor implements TableCellR
 					List<Video> videos = v.getVideos();
 					for(Video vi:videos){
 						String embed = vi.getEmbedCode();
-						System.out.println(embed);
 						VideoInfo info;
 						try {
 							info = UrlService.getVideoInfoFromEmbed(embed);

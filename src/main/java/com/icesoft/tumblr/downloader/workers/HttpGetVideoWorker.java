@@ -67,26 +67,27 @@ public class HttpGetVideoWorker implements IHttpGetWorker{
 				this.currsize = getCurrFileSize();
 				if(this.currsize > this.filesize){
 					this.state = STATE.EXCEPTION;
-					logger.debug(Thread.currentThread().getName() + " : HttpGetVideoWorker exception " + "Download error: invalid file[" + getFilename() + "].");
+					logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker exception " + "Download error: invalid file[" + getFilename() + "].");
 					setMessage("Download error: invalid file[" + getFilename() + "].");
 					return false;
 				}
 				if(this.currsize == this.filesize){
-					this.state = STATE.EXCEPTION;
-					logger.debug(Thread.currentThread().getName() + " : HttpGetVideoWorker exception " + "File already complete [" + getFilename() + "].");
+					this.state = STATE.COMPLETE;
+					logger.info(Thread.currentThread().getName() + " : HttpGetVideoWorker:" + "File already complete [" + getFilename() + "].");
 					setMessage("File already complete [" + getFilename() + "].");
 					return false;
 				}
 				return true;
 			}else{
 				this.state = STATE.EXCEPTION;
-				logger.debug(Thread.currentThread().getName() + " : HttpGetVideoWorker exception " + "Query error: Resopne code" + code);
+				logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker exception " + "Query error: Resopne code" + code);
+				logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker exception " + response.toString());
 				setMessage("Query error: Resopne code" + code);
 				return false;
 			}
 		}catch (IOException e) {
 			this.state = STATE.EXCEPTION;
-			logger.debug(Thread.currentThread().getName() + " : HttpGetVideoWorker exception " + "Query error:" + e.getMessage());
+			logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker exception " + "Query error:" + e.getMessage());
 			setMessage("Query error:" + e.getMessage());
 		}
 		return false;
@@ -104,12 +105,12 @@ public class HttpGetVideoWorker implements IHttpGetWorker{
 				buffer = 1 << 16;
 			} 
 			if(!createDirectory(getFilename())){
-				logger.debug(Thread.currentThread().getName() + " : HttpGetVideoWorker download task error " + "Create Directory fails:" + getFilename());
+				logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker download task error " + "Create Directory fails:" + getFilename());
 				setMessage("Create Directory fails:" + getFilename());
 				return;
 			}
 			FileOutputStream fos = new FileOutputStream(getFilename(), true);				
-			logger.debug(Thread.currentThread().getName() + " : HttpGetVideoWorker download task error :" + "Continue downloading at " + this.currsize);
+			logger.info(Thread.currentThread().getName() + " : HttpGetVideoWorker download task started:" + "Continue downloading at " + this.currsize);
 			while (!stop && remainingSize > 0) {
 				long begin = System.currentTimeMillis();
 				long delta = fos.getChannel().transferFrom(rbc, this.currsize, buffer);
@@ -131,12 +132,12 @@ public class HttpGetVideoWorker implements IHttpGetWorker{
 				fos.close();
 			}else{
 				fos.close();
-				logger.debug(Thread.currentThread().getName() + " : HttpGetVideoWorker download task error " + "Download error: incomplete.");
+				logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker download task error " + "Download error: incomplete.");
 				setMessage("Download error: incomplete.");
 			}
 		}catch (IOException e) {
 			this.state = STATE.EXCEPTION;
-			logger.debug(Thread.currentThread().getName() + " : HttpGetVideoWorker download error " + e.getMessage());
+			logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker download error " + e.getMessage());
 			setMessage("Download error:" + e.getMessage());
 			return;
 		}

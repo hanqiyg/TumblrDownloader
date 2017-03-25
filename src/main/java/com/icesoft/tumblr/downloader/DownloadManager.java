@@ -22,17 +22,6 @@ public class DownloadManager {
 	public static DownloadManager getInstance(){
 		return instance;
 	}
-	public void addVideoTask(String url,String filepath){
-		if(duplicates.contains(url)){
-			System.out.println("Already added:" + url);
-		}else{
-			duplicates.add(url);
-			System.out.println("addVideoTask" + url + "," + filepath);
-			HttpGetVideoWorker worker = new HttpGetVideoWorker(url,filepath);
-			workers.add(worker);
-			pool.submit(worker);
-		}
-	}
 	public List<IHttpGetWorker> getTasks(){
 		return workers;
 	}

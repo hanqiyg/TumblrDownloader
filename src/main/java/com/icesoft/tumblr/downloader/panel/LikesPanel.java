@@ -127,7 +127,7 @@ public class LikesPanel extends JPanel {
 							VideoInfo info;
 							try {
 								info = UrlService.getVideoInfoFromEmbed(embed);
-								DownloadManager.getInstance().addVideoTask(info.baseUrl, Settings.save_location + File.separator + blogname);
+								DownloadManager.getInstance().addVideoTask(info);
 							} catch (ParserException | IOException e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
