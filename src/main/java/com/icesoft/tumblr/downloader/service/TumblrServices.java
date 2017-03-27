@@ -76,12 +76,13 @@ public class TumblrServices {
 	}
 	public Post getLikeById(int index){
 		logger.info("Jumblr Service -> getLikeById[" + index + "] connecting.");
-		if(client == null){
-			connectService();
-		}
 		if(index < 0){
 			index = 0;
 		}	
+		if(client == null){
+			connectService();
+		}
+
 		Map<String, Integer> options = new HashMap<String, Integer>();
 		options.put("limit", 1);
 		options.put("offset",index);
@@ -89,12 +90,33 @@ public class TumblrServices {
 		List<Post> p = client.userLikes(options);
 		if(p!= null && p.size()>0){
 			Post post = p.get(0);
-			logger.info("Jumblr Service -> getLikeById[" + index + "]: " + post.getBlogName());
+			logger.info("Jumblr Service -> getLikeById[" + index + "]: "+ post.getBlogName() + "[" + post.getId() + "]");
 			return post;
 		}else{
 			//System.out.println("null");
 			return null;
 		}
+	}
+	public List<Post> getLikeById(int limit,int offset){
+		logger.info("Jumblr Service -> getLikeById[" + offset + "-" + (offset + limit) + "] connecting.");
+		if(offset < 0 || limit <= 0){
+			return null;
+		}	
+		if(client == null){
+			connectService();
+		}
+
+		Map<String, Integer> options = new HashMap<String, Integer>();
+		options.put("limit", limit);
+		options.put("offset",offset);
+		
+		List<Post> posts = client.userLikes(options);
+		if(posts!= null && posts.size()>0){
+			int count = posts.size();
+			logger.info("Jumblr Service -> getLikeById[" + offset + "-" + (offset + limit) +  "]: get [" + count + "] Posts.");
+			return posts;
+		}
+		return null;
 	}
 	public String getBlogName(Post post){
 		String blogName = post.getBlogName();

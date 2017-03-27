@@ -3,14 +3,15 @@ package com.icesoft.tumblr.downloader.panel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 
+import org.apache.log4j.Logger;
 import org.htmlparser.util.ParserException;
 
 import com.icesoft.tumblr.downloader.DownloadManager;
+import com.icesoft.tumblr.downloader.QueryManager;
 import com.icesoft.tumblr.downloader.Settings;
 import com.icesoft.tumblr.downloader.datamodel.ControllCellEditor;
 import com.icesoft.tumblr.downloader.datamodel.LikesPostModel;
-import com.icesoft.tumblr.downloader.datamodel.LikesPostModel.PostStatus;
-import com.icesoft.tumblr.downloader.datamodel.LikesPostModel.STATUS;
+import com.icesoft.tumblr.downloader.service.PostService;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.downloader.service.UrlService;
 import com.icesoft.tumblr.model.ImageInfo;
@@ -33,17 +34,12 @@ import java.io.IOException;
 import java.util.List;
 import java.awt.event.ActionEvent;
 
-public class LikesPanel extends JPanel {
+public class LikesPanel extends JPanel implements IRefreshable{
+	private static Logger logger = Logger.getLogger(LikesPanel.class);  
 	private static final long serialVersionUID = 4111940040655069650L;
 	private JTable table;
 	private JProgressBar progressBar;
-	
-	private Thread likesThread;
-	private int likes;
-	
-	private int index;
-	
-	private boolean load = false;
+
 	private JLabel lblProgess;
 	private JPanel panel;
 	private JButton btnStart;
@@ -51,6 +47,8 @@ public class LikesPanel extends JPanel {
 	private JButton btnPause;
 	private JButton btnResume;
 	private JButton btnAddAll;
+	
+	private LikesPostModel model;
 	
 	public LikesPanel(Settings settings,TumblrServices services) {
 		GridBagLayout gridBagLayout = new GridBagLayout();
@@ -72,14 +70,7 @@ public class LikesPanel extends JPanel {
 		btnStart = new JButton("Start");
 		btnStart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				likes = TumblrServices.getInstance().getLikesCount();
-				index = 0;
-				load = true;
-				initThread();
-				LikesPostModel model = (LikesPostModel) table.getModel();
-				model.clear();
-				model.fireTableDataChanged();
-				likesThread.start();
+				QueryManager.getInstance().ExecLikedQurey();
 			}
 		});
 		panel.add(btnStart);
@@ -87,8 +78,7 @@ public class LikesPanel extends JPanel {
 		btnPause = new JButton("Pause");
 		btnPause.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("btnPause");
-				load = false;
+				QueryManager.getInstance().pauseQuery();
 			}
 		});
 		panel.add(btnPause);
@@ -96,10 +86,7 @@ public class LikesPanel extends JPanel {
 		btnResume = new JButton("Resume");
 		btnResume.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("btnResume");
-				load = true;
-				initThread();
-				likesThread.start();
+				QueryManager.getInstance().resumeQuery();
 			}
 		});
 		panel.add(btnResume);
@@ -107,9 +94,7 @@ public class LikesPanel extends JPanel {
 		btnStop = new JButton("Stop");
 		btnStop.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("Stop");
-				load = false;
-				likesThread = null;
+				QueryManager.getInstance().stopQuery();
 			}
 		});
 		panel.add(btnStop);
@@ -117,9 +102,9 @@ public class LikesPanel extends JPanel {
 		btnAddAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				LikesPostModel model = (LikesPostModel) table.getModel();
-				for(PostStatus postStatus : model.getAll()){
-					if(postStatus.getPost() instanceof VideoPost){
-						VideoPost v = (VideoPost) postStatus.getPost();
+				for(Post post : PostService.getInstance().getPosts()){
+					if(post instanceof VideoPost){
+						VideoPost v = (VideoPost) post;
 						List<Video> videos = v.getVideos();
 						for(Video vi:videos){
 							String embed = vi.getEmbedCode();
@@ -135,15 +120,13 @@ public class LikesPanel extends JPanel {
 								e1.printStackTrace();
 							}
 						}
-						postStatus.setStatus(STATUS.DOWNLOADING);
 					}
-					if(postStatus.getPost() instanceof PhotoPost){
-						PhotoPost photoPost = (PhotoPost) postStatus.getPost();
+					if(post instanceof PhotoPost){
+						PhotoPost photoPost = (PhotoPost) post;
 						for(Photo photo : photoPost.getPhotos()){
 							String url = photo.getOriginalSize().getUrl();								
 							DownloadManager.getInstance().addImageTask(new ImageInfo(url,TumblrServices.getInstance().getBlogId(photoPost),TumblrServices.getInstance().getBlogName(photoPost)));
 						}
-						postStatus.setStatus(STATUS.DOWNLOADING);
 					}
 				}
 				
@@ -178,7 +161,8 @@ public class LikesPanel extends JPanel {
 		gbc_scrollPane.gridy = 3;
 		
 		table = new JTable();
-		table.setModel(new LikesPostModel());
+		model = new LikesPostModel();
+		table.setModel(model);
 		
 		ControllCellEditor editor = new ControllCellEditor();
 		table.getColumn("OP").setCellEditor(editor);
@@ -192,36 +176,11 @@ public class LikesPanel extends JPanel {
 		
 
 	}
-	public void initThread(){		
-		if(likes > 0){
-			progressBar.setMaximum(likes);
-			progressBar.setMinimum(0);
-			progressBar.setStringPainted(true);
-			
-			likesThread = new Thread(){
-				@Override
-				public void run() {
-					while(load){
-						if(index >= 0 && index<likes){
-							long begin = System.currentTimeMillis();
-							Post p = TumblrServices.getInstance().getLikeById(index);
-							if(p != null){
-								LikesPostModel model = (LikesPostModel) table.getModel();
-								model.addPost(p);
-								model.fireTableDataChanged();
-							}	
-							LikesPanel.this.progressBar.setValue(index);
-							long end = System.currentTimeMillis();
-							long time = end - begin;
-							long seconds = time * (likes - index) /1000;
-							lblProgess.setText(index + "/" + likes + "@" + seconds + "seconds left.");
-							index++;
-						}else{
-							break;
-						}
-					}				
-				}			
-			};
-		}
-	}
+
+	@Override
+	public void refresh() {
+		if(model!= null){
+			model.fireTableDataChanged();
+		}	
+	}	
 }

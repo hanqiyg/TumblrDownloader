@@ -7,7 +7,7 @@ import javax.swing.JProgressBar;
 
 import com.icesoft.tumblr.downloader.MainWindow;
 
-public class ResourceStatusPanel extends JPanel {
+public class ResourceStatusPanel extends JPanel implements IRefreshable{
 	private static final long serialVersionUID = 1186855036022070205L;
 	private JProgressBar pbMemory;
 	public ResourceStatusPanel() {
@@ -22,23 +22,6 @@ public class ResourceStatusPanel extends JPanel {
 		
 		pbMemory = new JProgressBar();
 		plMemory.add(pbMemory);
-		
-		Thread t = new Thread(){
-			@Override
-			public void run() {
-				while(MainWindow.refresh){
-					try {
-						updateMemory();			
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-
-			}			
-		};
-		t.start();
 	}
 	
 	public void updateMemory(){
@@ -50,5 +33,10 @@ public class ResourceStatusPanel extends JPanel {
 		pbMemory.setValue(freeMemory);
 		pbMemory.setString(freeMemory + " MB / " + totalMemory + "MB");
 		pbMemory.setStringPainted(true);
+	}
+
+	@Override
+	public void refresh() {
+		updateMemory();	
 	}
 }

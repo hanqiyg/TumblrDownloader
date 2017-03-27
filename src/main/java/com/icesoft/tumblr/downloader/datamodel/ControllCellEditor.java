@@ -15,14 +15,13 @@ import org.htmlparser.util.ParserException;
 
 import com.icesoft.tumblr.downloader.DownloadManager;
 import com.icesoft.tumblr.downloader.Settings;
-import com.icesoft.tumblr.downloader.datamodel.LikesPostModel.PostStatus;
-import com.icesoft.tumblr.downloader.datamodel.LikesPostModel.STATUS;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.downloader.service.UrlService;
 import com.icesoft.tumblr.model.ImageInfo;
 import com.icesoft.tumblr.model.VideoInfo;
 import com.tumblr.jumblr.types.Photo;
 import com.tumblr.jumblr.types.PhotoPost;
+import com.tumblr.jumblr.types.Post;
 import com.tumblr.jumblr.types.Video;
 import com.tumblr.jumblr.types.VideoPost;
 
@@ -45,43 +44,21 @@ public class ControllCellEditor extends AbstractCellEditor implements TableCellR
 	@Override
 	public Component getTableCellEditorComponent(final JTable table, Object value, boolean isSelected, final int row, final int column) {
 		ControllCellEditor.this.fireEditingCanceled();
-		if(value instanceof PostStatus){
-			PostStatus ps = (PostStatus) value;
-			if(ps != null){
-				switch(ps.getStatus()){
-					case DEFAULT:		return getDownloadButton(ps);
-					case DOWNLOADING:	return getCancelButton(ps);
-					case EXCEPTION:		return getRedownloadButton(ps);
-					case FINISH:		return getOpenFolderButton(ps);
-					default:			return null;		
-				}
-			}
+		if(value != null && value instanceof Post){
+			Post post = (Post) value;
+			return getDownloadButton(post);
 		}
 		return null;
 	}
 
-	private Component getOpenFolderButton(PostStatus ps) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
-	private Component getRedownloadButton(PostStatus ps) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private Component getCancelButton(PostStatus ps) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private Component getDownloadButton(final PostStatus ps) {
+	private Component getDownloadButton(Post post) {
 		JButton button = new JButton("Download");
 		button.addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if(ps.getPost() instanceof VideoPost){
-					VideoPost v = (VideoPost) ps.getPost();
+				if(post instanceof VideoPost){
+					VideoPost v = (VideoPost) post;
 					String blogName = v.getBlogName();
 					long id = v.getId();
 					if(blogName == null){
@@ -108,16 +85,14 @@ public class ControllCellEditor extends AbstractCellEditor implements TableCellR
 							e1.printStackTrace();
 						}
 					}
-					ps.setStatus(STATUS.DOWNLOADING);
 				}
-				if(ps.getPost() instanceof PhotoPost){
-					PhotoPost photoPost = (PhotoPost) ps.getPost();
+				if(post instanceof PhotoPost){
+					PhotoPost photoPost = (PhotoPost) post;
 					List<Photo> photos = photoPost.getPhotos();
 					for(Photo photo : photos){
 						String url = photo.getOriginalSize().getUrl();								
 						DownloadManager.getInstance().addImageTask(new ImageInfo(url,TumblrServices.getInstance().getBlogId(photoPost),TumblrServices.getInstance().getBlogName(photoPost)));			
 					}
-					ps.setStatus(STATUS.DOWNLOADING);
 				}
 			}		
 		});
