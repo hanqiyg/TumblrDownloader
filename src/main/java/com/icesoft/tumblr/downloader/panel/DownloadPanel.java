@@ -33,7 +33,7 @@ public class DownloadPanel extends JPanel {
 					try {
 						if(model!= null){
 							model.fireTableDataChanged();
-						}					
+						}				
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block

@@ -10,6 +10,7 @@ public class Settings {
 	public static String oauth_token;
 	public static String oauth_token_secret;	
 	
+	public static final String UNNAMEDBLOG = "UnnamedBlog";
 	public static int buffer_size = 1024;
 	
 	public static String proxy_socket_address="127.0.0.1";
@@ -22,6 +23,7 @@ public class Settings {
 	public static boolean useProxy = true;
 	
 	public static int x,y,w,h;
+	public static final int threadCount = 20;
 	
 	public Settings(){
 		loadWindowSettings();

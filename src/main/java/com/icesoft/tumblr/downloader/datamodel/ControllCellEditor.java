@@ -2,7 +2,6 @@ package com.icesoft.tumblr.downloader.datamodel;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import javax.swing.AbstractCellEditor;
@@ -11,13 +10,16 @@ import javax.swing.JTable;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
+import org.apache.log4j.Logger;
 import org.htmlparser.util.ParserException;
 
 import com.icesoft.tumblr.downloader.DownloadManager;
 import com.icesoft.tumblr.downloader.Settings;
 import com.icesoft.tumblr.downloader.datamodel.LikesPostModel.PostStatus;
 import com.icesoft.tumblr.downloader.datamodel.LikesPostModel.STATUS;
+import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.downloader.service.UrlService;
+import com.icesoft.tumblr.model.ImageInfo;
 import com.icesoft.tumblr.model.VideoInfo;
 import com.tumblr.jumblr.types.Photo;
 import com.tumblr.jumblr.types.PhotoPost;
@@ -26,6 +28,7 @@ import com.tumblr.jumblr.types.VideoPost;
 
 public class ControllCellEditor extends AbstractCellEditor implements TableCellRenderer,TableCellEditor {
 	private static final long serialVersionUID = -961439013223710139L;
+	private static Logger logger = Logger.getLogger(ControllCellEditor.class);  
 	JButton btn_download;
 	
 	
@@ -41,13 +44,10 @@ public class ControllCellEditor extends AbstractCellEditor implements TableCellR
 
 	@Override
 	public Component getTableCellEditorComponent(final JTable table, Object value, boolean isSelected, final int row, final int column) {
-		System.out.println("getTableCellEditorComponent");
 		ControllCellEditor.this.fireEditingCanceled();
-		System.out.println((value instanceof PostStatus));
 		if(value instanceof PostStatus){
 			PostStatus ps = (PostStatus) value;
 			if(ps != null){
-				System.out.println("ps != null");
 				switch(ps.getStatus()){
 					case DEFAULT:		return getDownloadButton(ps);
 					case DOWNLOADING:	return getCancelButton(ps);
@@ -76,22 +76,29 @@ public class ControllCellEditor extends AbstractCellEditor implements TableCellR
 	}
 
 	private Component getDownloadButton(final PostStatus ps) {
-		System.out.println("getDownloadButton");
 		JButton button = new JButton("Download");
 		button.addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("actionPerformed:"+"getDownloadButton");
 				if(ps.getPost() instanceof VideoPost){
-					System.out.println("addVideoTask");
 					VideoPost v = (VideoPost) ps.getPost();
-					String blogname = ps.getPost().getBlogName();
+					String blogName = v.getBlogName();
+					long id = v.getId();
+					if(blogName == null){
+						logger.error("blogName is null");
+						blogName= Settings.UNNAMEDBLOG;
+					}
+					if(id <= 0){
+						id = 0;
+					}
 					List<Video> videos = v.getVideos();
 					for(Video vi:videos){
 						String embed = vi.getEmbedCode();
 						VideoInfo info;
 						try {
 							info = UrlService.getVideoInfoFromEmbed(embed);
+							info.blogName = TumblrServices.getInstance().getBlogName(v);
+							info.id = TumblrServices.getInstance().getBlogId(v);
 							DownloadManager.getInstance().addVideoTask(info);
 						} catch (ParserException e1) {
 							// TODO Auto-generated catch block
@@ -100,7 +107,6 @@ public class ControllCellEditor extends AbstractCellEditor implements TableCellR
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
-
 					}
 					ps.setStatus(STATUS.DOWNLOADING);
 				}
@@ -108,17 +114,35 @@ public class ControllCellEditor extends AbstractCellEditor implements TableCellR
 					PhotoPost photoPost = (PhotoPost) ps.getPost();
 					List<Photo> photos = photoPost.getPhotos();
 					for(Photo photo : photos){
-						String url = photo.getOriginalSize().getUrl();
+						String url = photo.getOriginalSize().getUrl();								
+						DownloadManager.getInstance().addImageTask(new ImageInfo(url,TumblrServices.getInstance().getBlogId(photoPost),TumblrServices.getInstance().getBlogName(photoPost)));			
 					}
+					ps.setStatus(STATUS.DOWNLOADING);
 				}
-			}			
+			}		
 		});
 		return button;
 	}
-
+	public void printPost(PhotoPost photoPost) {
+		StringBuffer sb = new StringBuffer();
+		sb.append("getAuthorId:" 	+ photoPost.getAuthorId());sb.append("\n\r");
+		sb.append("getBlogName:" 	+ photoPost.getBlogName());sb.append("\n\r");
+		sb.append("getCaption:"  	+ photoPost.getCaption());sb.append("\n\r");
+		sb.append("getFormat:" 		+ photoPost.getFormat());sb.append("\n\r");
+		sb.append("getPostUrl:" 	+ photoPost.getPostUrl());sb.append("\n\r");
+		sb.append("getRebloggedFromName:" 	+ photoPost.getRebloggedFromName());sb.append("\n\r");
+		sb.append("getReblogKey:" 	+ photoPost.getReblogKey());sb.append("\n\r");
+		sb.append("getShortUrl:" 	+ photoPost.getShortUrl());sb.append("\n\r");
+		sb.append("getSourceTitle:" + photoPost.getSourceTitle());sb.append("\n\r");
+		sb.append("getSourceUrl:" 	+ photoPost.getSourceUrl());sb.append("\n\r");
+		sb.append("getState:" 		+ photoPost.getState());sb.append("\n\r");
+		sb.append("getType:" 		+ photoPost.getType());sb.append("\n\r");
+		sb.append("getId:" 			+ photoPost.getId());sb.append("\n\r");		
+		sb.append("getRebloggedFromId:" 	+ photoPost.getRebloggedFromId());sb.append("\n\r");	
+		System.out.println(sb.toString());
+	}	
 	@Override
 	public Object getCellEditorValue() {
-		System.out.println("getCellEditorValue");
 		return null;
 	}
 }

@@ -13,7 +13,10 @@ import com.icesoft.tumblr.downloader.datamodel.LikesPostModel.PostStatus;
 import com.icesoft.tumblr.downloader.datamodel.LikesPostModel.STATUS;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.downloader.service.UrlService;
+import com.icesoft.tumblr.model.ImageInfo;
 import com.icesoft.tumblr.model.VideoInfo;
+import com.tumblr.jumblr.types.Photo;
+import com.tumblr.jumblr.types.PhotoPost;
 import com.tumblr.jumblr.types.Post;
 import com.tumblr.jumblr.types.Video;
 import com.tumblr.jumblr.types.VideoPost;
@@ -26,7 +29,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.awt.event.ActionEvent;
@@ -115,11 +117,9 @@ public class LikesPanel extends JPanel {
 		btnAddAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				LikesPostModel model = (LikesPostModel) table.getModel();
-				for(PostStatus post : model.getAll()){
-					if(post.getPost() instanceof VideoPost){
-						System.out.println("addVideoTask");
-						VideoPost v = (VideoPost) post.getPost();
-						String blogname = post.getPost().getBlogName();
+				for(PostStatus postStatus : model.getAll()){
+					if(postStatus.getPost() instanceof VideoPost){
+						VideoPost v = (VideoPost) postStatus.getPost();
 						List<Video> videos = v.getVideos();
 						for(Video vi:videos){
 							String embed = vi.getEmbedCode();
@@ -127,13 +127,23 @@ public class LikesPanel extends JPanel {
 							VideoInfo info;
 							try {
 								info = UrlService.getVideoInfoFromEmbed(embed);
+								info.blogName = TumblrServices.getInstance().getBlogName(v);
+								info.id = TumblrServices.getInstance().getBlogId(v);
 								DownloadManager.getInstance().addVideoTask(info);
 							} catch (ParserException | IOException e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
 						}
-						post.setStatus(STATUS.DOWNLOADING);
+						postStatus.setStatus(STATUS.DOWNLOADING);
+					}
+					if(postStatus.getPost() instanceof PhotoPost){
+						PhotoPost photoPost = (PhotoPost) postStatus.getPost();
+						for(Photo photo : photoPost.getPhotos()){
+							String url = photo.getOriginalSize().getUrl();								
+							DownloadManager.getInstance().addImageTask(new ImageInfo(url,TumblrServices.getInstance().getBlogId(photoPost),TumblrServices.getInstance().getBlogName(photoPost)));
+						}
+						postStatus.setStatus(STATUS.DOWNLOADING);
 					}
 				}
 				

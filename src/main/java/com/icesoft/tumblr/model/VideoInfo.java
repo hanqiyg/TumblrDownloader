@@ -8,9 +8,13 @@ public class VideoInfo{
 	public String hdUrl;
 	public String hdPosterUrl;
 	public String mineType;
+	public String id;
+	public String blogName;
 	@Override
 	public String toString() {
-		return "Video:" + this.baseUrl
+		return 	  "BlogName:" + this.blogName
+				+ "\nId:" + this.id
+				+ "\nVideo:" + this.baseUrl
 				+ "\nPoster:" + this.posterUrl 
 				+ "\nType:" + this.mineType
 				+"\nVideo HD:" + this.hdUrl 

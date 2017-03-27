@@ -1,5 +1,7 @@
 package com.icesoft.utils;
 
+import java.io.File;
+
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpResponse;
@@ -29,10 +31,6 @@ public class StringUtils {
         return filename; 
 	}
 	public static String getFilenameFromFileUrl(String url){
-		String[]  args = url.split("/");
-		for(String s : args){
-			System.out.println(s);
-		}
 		return url.substring(url.lastIndexOf("/") + 1,
                  url.length());
 	}
@@ -47,5 +45,25 @@ public class StringUtils {
 			logger.debug("getFilename from file url as " + filename);
 		}
 		return filename;
+	}
+	public static String getSubPathFromUrl(String url)
+	{
+		String[]  args = url.split("/");
+		StringBuffer sb = new StringBuffer();
+		for(int i = 1; i < args.length -1; i++)
+		{
+			//logger.debug("path:" + i + "->" + args[i]);
+			if(args[i] != null && !args[i].trim().equals(""))
+			{
+				sb.append(File.separator + getAsciiPathString(args[i]));
+			}
+		}
+		//logger.info("Path:" + sb.toString());
+		return sb.toString();		
+	}
+	public static String getAsciiPathString(String sub){
+		String pathString = sub.replaceAll("[^a-zA-Z0-9.-]", "_");
+		//logger.info("Replace " + sub + " as " + pathString);
+		return pathString;
 	}
 }

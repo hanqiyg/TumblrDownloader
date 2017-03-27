@@ -2,7 +2,7 @@ package com.icesoft.tumblr.downloader.workers;
 
 import java.util.concurrent.Callable;
 
-import com.icesoft.tumblr.downloader.workers.HttpGetVideoWorker.STATE;
+import com.icesoft.tumblr.downloader.workers.STATE;
 
 
 public interface IHttpGetWorker extends Callable<Void>{

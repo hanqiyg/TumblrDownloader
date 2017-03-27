@@ -12,6 +12,7 @@ import javax.swing.JTabbedPane;
 
 import com.icesoft.tumblr.downloader.panel.DownloadPanel;
 import com.icesoft.tumblr.downloader.panel.LikesPanel;
+import com.icesoft.tumblr.downloader.panel.ResourceStatusPanel;
 import com.icesoft.tumblr.downloader.panel.SettingsPanel;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 
@@ -58,11 +59,14 @@ public class MainWindow {
 		LikesPanel likesPanel = new LikesPanel(settings,services);
 		SettingsPanel settingsPanel = new SettingsPanel(settings,services);
 		DownloadPanel downloadPanel = new DownloadPanel(settings,services);
+		ResourceStatusPanel resourceStatusPanel = new ResourceStatusPanel();
 		
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		tabbedPane.add("Likes", likesPanel);
 		tabbedPane.add("Settings", settingsPanel);
 		tabbedPane.add("Download", downloadPanel);
+		tabbedPane.add("ResourceStatus", resourceStatusPanel);
+		
 		GridBagConstraints gbc_tabbedPane = new GridBagConstraints();
 		gbc_tabbedPane.insets = new Insets(0, 0, 5, 0);
 		gbc_tabbedPane.fill = GridBagConstraints.BOTH;

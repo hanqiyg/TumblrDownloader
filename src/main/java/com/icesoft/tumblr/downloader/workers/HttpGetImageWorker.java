@@ -12,16 +12,13 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.log4j.Logger;
 
-import com.icesoft.utils.MineType;
 import com.icesoft.utils.StringUtils;
 
-public class HttpGetVideoWorker implements IHttpGetWorker{
-	private static Logger logger = Logger.getLogger(HttpGetVideoWorker.class);  
-
+public class HttpGetImageWorker implements IHttpGetWorker{
+	private static Logger logger = Logger.getLogger(HttpGetImageWorker.class);  
 	private String 	url;
 	private STATE 	state;
 	private String 	filename;
-	private String 	ext;
 	private String 	filepath;
 	private long   	filesize = 0;
 	private long   	currsize = 0;
@@ -34,20 +31,20 @@ public class HttpGetVideoWorker implements IHttpGetWorker{
 	private HttpGet get;
 	private File file;
 	
-	public HttpGetVideoWorker(String url,String filepath){
-		logger.info(Thread.currentThread().getName() + " : create HttpGetVideoWorker instance.");
+	public HttpGetImageWorker(String url,String filepath){
+		logger.info(Thread.currentThread().getName() + " : create HttpGetImageWorker instance.");
 		this.url = url;
 		this.filepath = filepath;
 		this.state = STATE.WAIT;
 	}
 	public void init(){
-		logger.info(Thread.currentThread().getName() + " : init HttpGetVideoWorker instance.");
+		logger.info(Thread.currentThread().getName() + " : init HttpGetImageWorker instance.");
 		client = HttpClients.createDefault();
 		get = new HttpGet(url);
 		
 	}
 	public boolean query(){
-		logger.info(Thread.currentThread().getName() + " : HttpGetVideoWorker query task begin.");
+		logger.info(Thread.currentThread().getName() + " : HttpGetImageWorker query task begin.");
 		try {
 			this.state = STATE.QUERY;
 			HttpResponse response = client.execute(get);
@@ -55,38 +52,37 @@ public class HttpGetVideoWorker implements IHttpGetWorker{
 			if(code == 200){
 				filesize = response.getEntity().getContentLength();
 				filename = StringUtils.getFilename(response, url);
-				ext = MineType.getInstance().getExtensionFromMineType(response.getEntity().getContentType().getValue());				
 				this.state = STATE.DOWNLOAD;
 				this.currsize = getCurrFileSize();
 				if(this.currsize > this.filesize){
 					this.state = STATE.EXCEPTION;
-					logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker exception " + "Download error: invalid file[" + getFilename() + "].");
+					logger.error(Thread.currentThread().getName() + " : HttpGetImageWorker exception " + "Download error: invalid file[" + getFilename() + "].");
 					setMessage("Download error: invalid file[" + getFilename() + "].");
 					return false;
 				}
 				if(this.currsize == this.filesize){
 					this.state = STATE.COMPLETE;
-					logger.info(Thread.currentThread().getName() + " : HttpGetVideoWorker:" + "File already complete [" + getFilename() + "].");
+					logger.info(Thread.currentThread().getName() + " : HttpGetImageWorker:" + "File already complete [" + getFilename() + "].");
 					setMessage("File already complete [" + getFilename() + "].");
 					return false;
 				}
 				return true;
 			}else{
 				this.state = STATE.EXCEPTION;
-				logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker exception " + "Query error: Resopne code" + code);
-				logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker exception " + response.toString());
+				logger.error(Thread.currentThread().getName() + " : HttpGetImageWorker exception " + "Query error: Resopne code" + code);
+				logger.error(Thread.currentThread().getName() + " : HttpGetImageWorker exception " + response.toString());
 				setMessage("Query error: Resopne code" + code);
 				return false;
 			}
 		}catch (IOException e) {
 			this.state = STATE.EXCEPTION;
-			logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker exception " + "Query error:" + e.getMessage());
+			logger.error(Thread.currentThread().getName() + " : HttpGetImageWorker exception " + "Query error:" + e.getMessage());
 			setMessage("Query error:" + e.getMessage());
 		}
 		return false;
 	}
 	public void download(){
-		logger.info(Thread.currentThread().getName() + " : HttpGetVideoWorker download task begin.");
+		logger.info(Thread.currentThread().getName() + " : HttpGetImageWorker download task begin.");
 		try{
 			this.state = STATE.DOWNLOAD;
 			get.addHeader("Range", "bytes="+this.currsize+"-");
@@ -98,12 +94,12 @@ public class HttpGetVideoWorker implements IHttpGetWorker{
 				buffer = 1 << 16;
 			} 
 			if(!createDirectory(getFilename())){
-				logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker download task error " + "Create Directory fails:" + getFilename());
+				logger.error(Thread.currentThread().getName() + " : HttpGetImageWorker download task error " + "Create Directory fails:" + getFilename());
 				setMessage("Create Directory fails:" + getFilename());
 				return;
 			}
 			FileOutputStream fos = new FileOutputStream(getFilename(), true);				
-			logger.info(Thread.currentThread().getName() + " : HttpGetVideoWorker download task started:" + "Continue downloading at " + this.currsize);
+			logger.info(Thread.currentThread().getName() + " : HttpGetImageWorker download task started:" + "Continue downloading at " + this.currsize);
 			while (!stop && remainingSize > 0) {
 				long begin = System.currentTimeMillis();
 				long delta = fos.getChannel().transferFrom(rbc, this.currsize, buffer);
@@ -118,19 +114,19 @@ public class HttpGetVideoWorker implements IHttpGetWorker{
 				}
 			}
 			if (this.currsize == this.filesize) {
-				logger.info(Thread.currentThread().getName() + " : HttpGetVideoWorker download task " + "File is complete");
+				logger.info(Thread.currentThread().getName() + " : HttpGetImageWorker download task " + "File is complete");
 				setMessage("File is complete");
 				this.state = STATE.COMPLETE;
 				rbc.close();
 				fos.close();
 			}else{
 				fos.close();
-				logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker download task error " + "Download error: incomplete.");
+				logger.error(Thread.currentThread().getName() + " : HttpGetImageWorker download task error " + "Download error: incomplete.");
 				setMessage("Download error: incomplete.");
 			}
 		}catch (IOException e) {
 			this.state = STATE.EXCEPTION;
-			logger.error(Thread.currentThread().getName() + " : HttpGetVideoWorker download error " + e.getMessage());
+			logger.error(Thread.currentThread().getName() + " : HttpGetImageWorker download error " + e.getMessage());
 			setMessage("Download error:" + e.getMessage());
 			return;
 		}
@@ -174,7 +170,6 @@ public class HttpGetVideoWorker implements IHttpGetWorker{
 		if(filesize == 0){
 			return 0;
 		}else{
-			//System.out.println(this.currsize + "/" + this.filesize + "=" + (this.currsize * 100 / this.filesize) + "(" + (int) (this.currsize * 100 / this.filesize) + ")");
 			return (int) (this.currsize * 100 / this.filesize);
 		}
 	}
@@ -192,7 +187,7 @@ public class HttpGetVideoWorker implements IHttpGetWorker{
 	}
 	@Override
 	public String getFilename() {
-		return filepath + File.separator + filename + "." + ext;
+		return filepath + File.separator + filename;
 	}
 	@Override
 	public STATE getState() {
@@ -203,7 +198,6 @@ public class HttpGetVideoWorker implements IHttpGetWorker{
 		return this.message;
 	}
 	public void setMessage(String msg){
-		//System.out.println(msg);
 		this.message = msg;
 	}
 	@Override

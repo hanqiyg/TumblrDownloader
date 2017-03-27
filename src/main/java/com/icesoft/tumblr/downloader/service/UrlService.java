@@ -8,6 +8,7 @@ import org.htmlparser.NodeFilter;
 import org.htmlparser.Parser;
 import org.htmlparser.PrototypicalNodeFactory;
 import org.htmlparser.filters.NodeClassFilter;
+import org.htmlparser.filters.OrFilter;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
 
@@ -25,56 +26,27 @@ public class UrlService
 		VideoInfo vi = new VideoInfo();
 		Parser parser = new Parser(embed);	
         PrototypicalNodeFactory p=new PrototypicalNodeFactory();  
-        p.registerTag(new VideoTag());   
+        p.registerTag(new VideoTag()); 
+        p.registerTag(new SourceTag());   
         parser.setNodeFactory(p);
 		NodeFilter videoFilter = new NodeClassFilter(VideoTag.class);
-		NodeList nodes = parser.extractAllNodesThatMatch(videoFilter);
+		NodeFilter sourceFilter = new NodeClassFilter(SourceTag.class);  
+		OrFilter or = new OrFilter(videoFilter,sourceFilter);
+		NodeList nodes = parser.extractAllNodesThatMatch(or);
         Node eachNode = null;
-		if(nodes != null){
+		if(nodes != null && nodes.size() > 0)
+		{
 			for (int i = 0; i < nodes.size(); i++) 
             {
                 eachNode = (Node)nodes.elementAt(i);
-                if(eachNode!= null && eachNode instanceof VideoTag){
+                if(eachNode!= null && eachNode instanceof VideoTag)
+                {
                 	VideoTag t = (VideoTag) eachNode;            		
                 	if(t.getPoster()!= null)
                 	{
                     	vi.posterUrl = t.getPoster();
                 	}
-
-                	String opt = t.getOption();
-                	//System.out.println(opt);
-                	
-/*                	JsonReader jsonReader = new JsonReader(new StringReader(opt));
-                    while(jsonReader.hasNext()){
-                        JsonToken nextToken = jsonReader.peek();
-                        System.out.println(nextToken);
-                        if(JsonToken.BEGIN_OBJECT.equals(nextToken)){
-                            jsonReader.beginObject();
-                        } else if(JsonToken.NAME.equals(nextToken)){
-                            String name  =  jsonReader.nextName();
-                            System.out.println(name);
-                        } else if(JsonToken.STRING.equals(nextToken)){
-                            String value =  jsonReader.nextString();
-                            System.out.println(value);
-                        } else if(JsonToken.NUMBER.equals(nextToken)){
-                            long value =  jsonReader.nextLong();
-                            System.out.println(value);
-                        }else if(JsonToken.BOOLEAN.equals(nextToken)){
-                        	 boolean value =  jsonReader.nextBoolean();
-                             System.out.println(value);
-                        }else if(JsonToken.END_OBJECT.equals(nextToken)){                        	
-                        	jsonReader.endObject();
-                        }else if(JsonToken.BEGIN_ARRAY.equals(nextToken)){                        	
-                        	jsonReader.beginArray();
-                        }else if(JsonToken.END_ARRAY.equals(nextToken)){                        	
-                        	jsonReader.endArray();
-                        }else{
-                        	System.out.println(nextToken);
-                        	jsonReader.skipValue();
-                        }
-                    }
-                    jsonReader.close();*/
-                	
+                	String opt = t.getOption();                	
                 	JsonReader reader = new JsonReader(new StringReader(opt));
                 	reader.setLenient(true);
             		reader.beginObject();
@@ -103,40 +75,21 @@ public class UrlService
                 	}
                 	reader.endObject();
                 	reader.close();
-                }              
-            }
-		}
-
-		Parser parser2 = new Parser(embed);	
-        PrototypicalNodeFactory p2 = new PrototypicalNodeFactory();  
-        p2.registerTag(new SourceTag());   
-        parser2.setNodeFactory(p2);
-		NodeFilter sourceFilter = new NodeClassFilter(SourceTag.class);  
-    	NodeList vss = parser2.extractAllNodesThatMatch(sourceFilter);
-    	
-    	if(vss != null && vss.size() > 0)
-    	{
-        	for(int j=0;j<vss.size();j++)
-        	{
-        		Node n = vss.elementAt(j);
-        		if(n instanceof SourceTag)
-        		{
-        			SourceTag st = (SourceTag) n;
+                }
+                if(eachNode!= null && eachNode instanceof SourceTag)
+                {
+        			SourceTag st = (SourceTag) eachNode;
         			if(st.getSrc() != null){
             			vi.baseUrl = st.getSrc();
         			}
         			if(st.getType() != null){
         				vi.mineType = st.getType();
         			}
-        		}else
-        		{
-        			//System.out.println("not instanceof SourceTag");
-        		}
-        	}
-    	}else
-    	{
-    		//System.out.println("vss null");
-    	}
+                }
+            }
+		}else{
+			logger.error("getVideoInfoFromEmbed() can not find any VideoTag / SourceTag From " + embed); 
+		}
 		return vi;	
 	}
 	public static String getStringToken(JsonReader reader,String s) throws IOException{
