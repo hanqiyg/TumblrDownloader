@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.icesoft.tumblr.downloader.Settings;
+import com.icesoft.tumblr.settings.TumblrToken;
 import com.tumblr.jumblr.JumblrClient;
 import com.tumblr.jumblr.types.Post;
 import com.tumblr.jumblr.types.User;
@@ -14,27 +15,30 @@ public class TumblrServices {
 	private static Logger logger = Logger.getLogger(TumblrServices.class);  
 	private User user;
 	private JumblrClient client;
-	
 	private static TumblrServices instance = new TumblrServices();
 	private TumblrServices(){}
 	
 	public static TumblrServices getInstance(){
 		return instance;
 	}
-	public String testConnect(String CONSUMER_KEY,String CONSUMER_SECRET, String OAUTH_TOKEN, String OAUTH_TOKEN_SECRET){
-		logger.info("Jumblr Service -> testConnect[consumer_key:" + CONSUMER_KEY + "]" + "[consumer_secret:" + CONSUMER_SECRET + "]"
-												+ "[oauth_token:" + OAUTH_TOKEN + "]"  + "[oauth_token_secret:" + OAUTH_TOKEN_SECRET + "] connecting.");
-		 String result = null;
+	public String testConnect(TumblrToken token){
+		logger.info("Jumblr Service -> testConnect" + "\r\n"
+					+ "      consumer_key:["	+ token.getConsumer_key() 		+ "]" 	+ "\r\n"
+					+ "   consumer_secret:[" 	+ token.getConsumer_secret() 	+ "]"	+ "\r\n"
+					+ "       oauth_token:[" 	+ token.getOauth_token() 		+ "]"  	+ "\r\n"
+					+ "oauth_token_secret:[" 	+ token.getOauth_token_secret() + "]"	+ "\r\n"
+					+ "connecting....");
+		String result = null;
 		try{
-			JumblrClient client = new JumblrClient(CONSUMER_KEY,CONSUMER_SECRET);
-			client.setToken(OAUTH_TOKEN, OAUTH_TOKEN_SECRET);
+			JumblrClient client = new JumblrClient(token.getConsumer_key(),token.getConsumer_secret());
+			client.setToken(token.getOauth_token(), token.getOauth_token_secret());
 			User user = client.user();
 			if(user != null){
-				result = "User:" + user.getName();
-				logger.info("Jumblr Service -> testConnect: success. [User:" + user + "]"); 
+				result = "Success User:" + user.getName();
+				logger.info("Jumblr Service -> testConnect: success. [User:" + (user==null?"null":user.getName()) + "]");
 			}else{
 				logger.info("Jumblr Service -> testConnect: success. [User: Null]"); 
-				result = "User:Null";
+				result = "Success User:Null";
 			}
 		}catch(Exception e){
 			logger.error("Jumblr Service -> testConnect: failure. " + e.getMessage()); 
@@ -42,29 +46,22 @@ public class TumblrServices {
 		}		
 		return result;
 	}
-	public static final String consumer_key = "MfA6BDjf9VUaGZhk0Qzc9mQxMoqrGAGbYNsLBM6i8ZZQDTQYaQ";
-	public static final String consumer_secret = "zXRjmPNWZ4lNtZ9TK5gvuQ0qsGEzB5IpGRdt3XyVkf9o910apy";
-	public static final String oauth_token = "qcTky7QPyOiTsmFQTfJCQbblSgcg8JNhKJg7pKEXr1BlBuAKWB";
-	public static final String oauth_token_secret = "uvtpgLFPIq3dGTTSxqG1pQSoSKgV6GXR4ZgsYeKBzl6Bq2by1q";
-
 	public boolean connectService(){
-		logger.info("Connecting to jumblr service.");
-		if(Settings.consumer_key == null || Settings.consumer_secret == null || Settings.oauth_token == null || Settings.oauth_token_secret == null){
-			client = new JumblrClient(consumer_key,consumer_secret);
-			client.setToken(oauth_token, oauth_token_secret);
-		}else{
-			client = new JumblrClient(Settings.consumer_key,Settings.consumer_secret);
-			client.setToken(Settings.oauth_token, Settings.oauth_token_secret);	
-		}
-
-		user = client.user();
-		if(user != null){
-			logger.info("Jumblr Service connected.");
-			return true;		
-		}else{
-			logger.error("Jumblr Service connect error.");
+		try{
+			logger.info("Connecting to jumblr service.");
+				client = new JumblrClient(
+						Settings.getInstance().getToken().getConsumer_key(),
+						Settings.getInstance().getToken().getConsumer_secret()
+						);
+				client.setToken(
+						Settings.getInstance().getToken().getOauth_token(),
+						Settings.getInstance().getToken().getOauth_token_secret());
+			user = client.user();
+			return true;
+		}catch(Exception e){
+			logger.error("Jumblr Service -> testConnect: failure. " + e.getMessage()); 
 			return false;
-		}		
+		}	
 	}
 	public int getLikesCount(){
 		if(user == null){

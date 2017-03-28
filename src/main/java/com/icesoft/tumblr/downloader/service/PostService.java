@@ -23,10 +23,11 @@ public class PostService {
 		return instance;
 	}
 	public List<Post> getPosts(){
-		logger.info("load" + posts.size());
+		//logger.info("load" + posts.size());
 		return posts;
 	}	
 	public void AddPosts(List<Post> postList){
+		logger.info("Add:" + postList.size());
 		for(Post p : postList){
 			posts.add(p);
 		}

@@ -59,15 +59,6 @@ public class ControllCellEditor extends AbstractCellEditor implements TableCellR
 			public void actionPerformed(ActionEvent e) {
 				if(post instanceof VideoPost){
 					VideoPost v = (VideoPost) post;
-					String blogName = v.getBlogName();
-					long id = v.getId();
-					if(blogName == null){
-						logger.error("blogName is null");
-						blogName= Settings.UNNAMEDBLOG;
-					}
-					if(id <= 0){
-						id = 0;
-					}
 					List<Video> videos = v.getVideos();
 					for(Video vi:videos){
 						String embed = vi.getEmbedCode();
@@ -88,11 +79,7 @@ public class ControllCellEditor extends AbstractCellEditor implements TableCellR
 				}
 				if(post instanceof PhotoPost){
 					PhotoPost photoPost = (PhotoPost) post;
-					List<Photo> photos = photoPost.getPhotos();
-					for(Photo photo : photos){
-						String url = photo.getOriginalSize().getUrl();								
-						DownloadManager.getInstance().addImageTask(new ImageInfo(url,TumblrServices.getInstance().getBlogId(photoPost),TumblrServices.getInstance().getBlogName(photoPost)));			
-					}
+					downloadImage(photoPost);
 				}
 			}		
 		});
@@ -119,5 +106,12 @@ public class ControllCellEditor extends AbstractCellEditor implements TableCellR
 	@Override
 	public Object getCellEditorValue() {
 		return null;
+	}
+	public void downloadImage(PhotoPost p){
+		List<Photo> photos = p.getPhotos();
+		for(Photo photo : photos){
+			String url = photo.getOriginalSize().getUrl();						
+			DownloadManager.getInstance().addImageTask(new ImageInfo(url,TumblrServices.getInstance().getBlogId(p),TumblrServices.getInstance().getBlogName(p)));			
+		}
 	}
 }

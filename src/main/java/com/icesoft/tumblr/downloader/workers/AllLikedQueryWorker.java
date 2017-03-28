@@ -31,8 +31,9 @@ public class AllLikedQueryWorker implements IQueryWorker{
 			if(offset < count){
 				if(offset + limit >= count){
 					List<Post> posts = TumblrServices.getInstance().getLikeById(count - offset, offset);
+					offset = count;
 					if(posts != null && !posts.isEmpty()){
-						PostService.getInstance().AddPosts(posts);
+						PostService.getInstance().AddPosts(posts);						
 					}
 					break;
 				}else{
@@ -47,6 +48,12 @@ public class AllLikedQueryWorker implements IQueryWorker{
 			}
 		}
 		return null;
+	}
+	public int getLikedCount(){
+		return count;
+	}
+	public int getQueryCount(){
+		return offset;
 	}
 	public void stop(){
 		run = false;

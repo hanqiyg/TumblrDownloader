@@ -8,12 +8,12 @@ import org.htmlparser.util.ParserException;
 
 import com.icesoft.tumblr.downloader.DownloadManager;
 import com.icesoft.tumblr.downloader.QueryManager;
-import com.icesoft.tumblr.downloader.Settings;
 import com.icesoft.tumblr.downloader.datamodel.ControllCellEditor;
 import com.icesoft.tumblr.downloader.datamodel.LikesPostModel;
 import com.icesoft.tumblr.downloader.service.PostService;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.downloader.service.UrlService;
+import com.icesoft.tumblr.downloader.workers.AllLikedQueryWorker;
 import com.icesoft.tumblr.model.ImageInfo;
 import com.icesoft.tumblr.model.VideoInfo;
 import com.tumblr.jumblr.types.Photo;
@@ -50,7 +50,7 @@ public class LikesPanel extends JPanel implements IRefreshable{
 	
 	private LikesPostModel model;
 	
-	public LikesPanel(Settings settings,TumblrServices services) {
+	public LikesPanel() {
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] {0};
 		gridBagLayout.rowHeights = new int[] {0};
@@ -181,6 +181,15 @@ public class LikesPanel extends JPanel implements IRefreshable{
 	public void refresh() {
 		if(model!= null){
 			model.fireTableDataChanged();
-		}	
+		}
+		if(QueryManager.getInstance().getWorker() != null && QueryManager.getInstance().getWorker() instanceof AllLikedQueryWorker){
+			AllLikedQueryWorker likedWorker = (AllLikedQueryWorker) QueryManager.getInstance().getWorker();
+			progressBar.setMaximum(likedWorker.getLikedCount());
+			progressBar.setMinimum(0);
+			progressBar.setValue(likedWorker.getQueryCount());
+			progressBar.setString(likedWorker.getQueryCount() + " / " + likedWorker.getLikedCount());
+			progressBar.setStringPainted(true);
+		}
+
 	}	
 }

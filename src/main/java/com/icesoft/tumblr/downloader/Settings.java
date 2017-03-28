@@ -3,71 +3,158 @@ package com.icesoft.tumblr.downloader;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.log4j.Logger;
+
+import com.icesoft.tumblr.settings.ProxySettings;
+import com.icesoft.tumblr.settings.TumblrToken;
+import com.icesoft.tumblr.settings.WindowSettings;
+
 public class Settings {
-	public static String PACKAGE_NAME = "com1.icesoft.tumblr.Settings";
-	public static String consumer_key;
-	public static String consumer_secret;
-	public static String oauth_token;
-	public static String oauth_token_secret;	
-	
+	private static Logger logger = Logger.getLogger(Settings.class);
+	public static final String PACKAGE_NAME = "com1.icesoft.tumblr.Settings";
 	public static final String UNNAMEDBLOG = "UnnamedBlog";
-	public static int buffer_size = 1024;
+
+	public int buffer_size = 1024;
 	
-	public static String proxy_socket_address="127.0.0.1";
-	public static String proxy_socket_port="1080"; 
+	public String proxy_socket_address="127.0.0.1";
+	public String proxy_socket_port="1080"; 
 	
-	public static int connect_timeout = 20000;
-	public static int read_timeout = 20000;
+	public int connect_timeout = 20000;
+	public int read_timeout = 20000;
 	
-	public static String save_location = "d:/tumblr";
-	public static boolean useProxy = true;
+	public String save_location;
 	
-	public static int x,y,w,h;
-	public static final int threadCount = 20;
+	public final int threadCount = 20;
 	
-	public Settings(){
-		loadWindowSettings();
-		loadKeySettings();
+
+	
+	private static Settings instance = new Settings();
+	private TumblrToken token;
+	private WindowSettings windowSettings;
+	private ProxySettings proxySettings;
+	private Preferences prefs;
+	
+	private Settings(){
+		prefs = Preferences.userRoot().node(PACKAGE_NAME);
 	}
 	
-	public static void saveKeySettings(){
+	public static Settings getInstance(){
+		return instance;
+	}
+	public void setSaveLocation(String location){
+		this.save_location = location;
+	}	
+	public String getSaveLocation(){
+		if(save_location == null)
+		{
+			save_location = prefs.get("Save.Location", "d:/tumblr");
+		}
+		return save_location;
+	}
+	public void saveLocation(){
+		if(save_location != null)
+		{
+			prefs.put("Save.Location", "d:/tumblr");
+			try {
+				prefs.flush();
+			} catch (BackingStoreException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public void setToken(TumblrToken token){
+		this.token = token;
+	}
+	public void saveToken(TumblrToken token){
 		try {
-			Preferences prefs = Preferences.userRoot().node(PACKAGE_NAME);
-			prefs.put("consumer_key", consumer_key);
-			prefs.put("consumer_secret", consumer_secret);
-			prefs.put("oauth_token", oauth_token);
-			prefs.put("oauth_token_secret", oauth_token_secret);
+			prefs.put("consumer_key", 		token.getConsumer_key());
+			prefs.put("consumer_secret", 	token.getConsumer_secret());
+			prefs.put("oauth_token", 		token.getOauth_token());
+			prefs.put("oauth_token_secret", token.getOauth_token_secret());
 			prefs.flush();
 		} catch (BackingStoreException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}	
-	public static void loadKeySettings(){
-		Preferences prefs = Preferences.userRoot().node(PACKAGE_NAME);
-		consumer_key = prefs.get("consumer_key", "");
-		consumer_secret = prefs.get("consumer_secret", "");
-		oauth_token = prefs.get("oauth_token", "");
-		oauth_token_secret = prefs.get("oauth_token_secret", "");
-	}	
-	public static void saveWindowSettings(){
+	}
+	public static final String consumer_key = "MfA6BDjf9VUaGZhk0Qzc9mQxMoqrGAGbYNsLBM6i8ZZQDTQYaQ";
+	public static final String consumer_secret = "zXRjmPNWZ4lNtZ9TK5gvuQ0qsGEzB5IpGRdt3XyVkf9o910apy";
+	public static final String oauth_token = "qcTky7QPyOiTsmFQTfJCQbblSgcg8JNhKJg7pKEXr1BlBuAKWB";
+	public static final String oauth_token_secret = "uvtpgLFPIq3dGTTSxqG1pQSoSKgV6GXR4ZgsYeKBzl6Bq2by1q";
+	
+	public TumblrToken getToken(){
+		if(token == null)
+		{
+			token = new TumblrToken(
+			prefs.get("consumer_key", consumer_key),			
+			prefs.get("consumer_secret",consumer_secret),
+			prefs.get("oauth_token", oauth_token),
+			prefs.get("oauth_token_secret", oauth_token_secret));
+		}
+		return token;
+	}
+
+	public void setWindowSettings(int x, int y,int w,int h){
+		if(windowSettings != null){
+			windowSettings.setX(x);
+			windowSettings.setY(y);
+			windowSettings.setW(w);
+			windowSettings.setH(h);
+		}else{
+			windowSettings = new WindowSettings(x,y,w,h);
+		}
+		saveWindowSettings(windowSettings);
+	}
+	public void saveWindowSettings(WindowSettings windowSettings){
 		try {
-			Preferences prefs = Preferences.userRoot().node(PACKAGE_NAME);
-			prefs.putInt("Window.X", x);
-			prefs.putInt("Window.Y", y);
-			prefs.putInt("Window.W", w);
-			prefs.putInt("Window.H", h);	
+			prefs.putInt("Window.X", windowSettings.getX());
+			prefs.putInt("Window.Y", windowSettings.getY());
+			prefs.putInt("Window.W", windowSettings.getW());
+			prefs.putInt("Window.H", windowSettings.getH());	
+			prefs.flush();
+		} catch (BackingStoreException e) {
+			logger.error("SaveWindowSettings error:" + e.getMessage());
+		}
+	}
+	
+	public WindowSettings getWindowSetting(){
+		if(windowSettings == null){
+			windowSettings = new WindowSettings(
+					prefs.getInt("Window.X", 100),
+					prefs.getInt("Window.Y", 100),
+					prefs.getInt("Window.W", 450),
+					prefs.getInt("Window.H", 300));
+		}
+		return windowSettings;
+	}
+
+	public ProxySettings getProxySettings() {
+		if(proxySettings == null){
+			proxySettings = new ProxySettings(
+					prefs.get("Proxy.Type", ProxySettings.Type.SOCKS.toString()),
+					prefs.get("Proxy.Host", "127.0.0.1"),
+					prefs.getInt("Proxy.Port", 1080));
+		}
+		return proxySettings;
+	}
+
+	public void setProxySettings(ProxySettings proxySettings) {
+		this.proxySettings = proxySettings;
+	}
+	public void saveProxySettings(ProxySettings proxySettings)
+	{
+		try {
+			prefs.put("Proxy.Type",		proxySettings.getType().toString());
+			prefs.put("Proxy.Host", 	proxySettings.getHost());
+			prefs.putInt("Proxy.Port", 	proxySettings.getPort());
 			prefs.flush();
 		} catch (BackingStoreException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}	
-	public static void loadWindowSettings(){
-		Preferences prefs = Preferences.userRoot().node(PACKAGE_NAME);
-		x = prefs.getInt("Window.X", 100);
-		y = prefs.getInt("Window.Y", 100);
-		w = prefs.getInt("Window.W", 450);
-		h = prefs.getInt("Window.H", 300);
 	}
 }

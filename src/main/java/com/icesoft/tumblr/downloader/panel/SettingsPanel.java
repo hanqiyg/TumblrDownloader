@@ -9,6 +9,7 @@ import javax.swing.JTextField;
 
 import com.icesoft.tumblr.downloader.Settings;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
+import com.icesoft.tumblr.settings.TumblrToken;
 
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
@@ -22,10 +23,9 @@ public class SettingsPanel extends JPanel {
 	private JTextField tfOAUTH_TOKEN_SECRET;
 	private JTextField tfUserInfo;
 	
-	private TumblrServices 	services;
+	private TumblrToken token;
 
-	public SettingsPanel(Settings settings,TumblrServices services) {
-		this.services = services;
+	public SettingsPanel() {
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] {0};
 		gridBagLayout.rowHeights = new int[] {0};
@@ -118,45 +118,55 @@ public class SettingsPanel extends JPanel {
 		gbc_controlPanel.fill = GridBagConstraints.HORIZONTAL;
 		gbc_controlPanel.gridx = 0;
 		gbc_controlPanel.gridy = 1;
-		add(controlPanel, gbc_controlPanel);		
+		add(controlPanel, gbc_controlPanel);	
+		
 		JButton btnTest = new JButton("Test");
 		btnTest.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String consumer_key = tfCONSUMER_KEY.getText();
-				String consumer_secret = tfCONSUMER_SECRET.getText();
-				String oauth_token = tfOAUTH_TOKEN.getText();
-				String oauth_token_secret = tfOAUTH_TOKEN_SECRET.getText();
-				String msg = SettingsPanel.this.services.testConnect(consumer_key,consumer_secret,oauth_token,oauth_token_secret);
+				String msg = TumblrServices.getInstance().testConnect(loadTokenFromInput());
 				tfUserInfo.setText(msg);
 			}
 		});
-		controlPanel.add(btnTest);		
-		JButton btnSave = new JButton("Save");
-		btnSave.addActionListener(new ActionListener() {
+		controlPanel.add(btnTest);
+		
+		JButton btnApply = new JButton("Apply");
+		btnTest.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				saveKeys();
-				Settings.saveKeySettings();
+				Settings.getInstance().setToken(loadTokenFromInput());
+			}
+		});
+		controlPanel.add(btnApply);
+		
+		JButton btnLoad = new JButton("Load");
+		btnLoad.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				loadTokenToInput(Settings.getInstance().getToken());
+			}
+		});
+		controlPanel.add(btnLoad);
+		
+		JButton btnSave = new JButton("Save");
+		btnSave.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				Settings.getInstance().saveToken(loadTokenFromInput());
 				tfUserInfo.setText("Save Keys: sucess");				
 			}
 		});
 		controlPanel.add(btnSave);
 		
-		JButton btnReset = new JButton("Reset");
-		btnReset.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		JButton btnClear = new JButton("Clear");
+		btnClear.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
 				resetKeys();
 			}
 		});
+		controlPanel.add(btnClear);
 		
-		JButton btnLoad = new JButton("Load");
-		btnLoad.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				Settings.loadKeySettings();
-				loadKeys();
-			}
-		});
-		controlPanel.add(btnLoad);
-		controlPanel.add(btnReset);
+
 		
 		JPanel panel = new JPanel();
 		GridBagConstraints gbc_panel = new GridBagConstraints();
@@ -181,21 +191,29 @@ public class SettingsPanel extends JPanel {
 		gbc_tfUserInfo.gridy = 0;
 		panel.add(tfUserInfo, gbc_tfUserInfo);
 		tfUserInfo.setColumns(10);
-		loadKeys();
+		
+		loadTokenToInput(Settings.getInstance().getToken());
 	}
-	public void saveKeys(){
-		Settings.consumer_key = tfCONSUMER_KEY.getText();
-		Settings.consumer_secret = tfCONSUMER_SECRET.getText();
-		Settings.oauth_token = tfOAUTH_TOKEN.getText();
-		Settings.oauth_token_secret = tfOAUTH_TOKEN_SECRET.getText();
+	public TumblrToken loadTokenFromInput()
+	{
+		token = new TumblrToken
+				(
+					tfCONSUMER_KEY.getText(),
+					tfCONSUMER_SECRET.getText(),
+					tfOAUTH_TOKEN.getText(),
+					tfOAUTH_TOKEN_SECRET.getText()
+				);
+		return token;
 	}
-	public void loadKeys(){
-		tfCONSUMER_KEY.setText(Settings.consumer_key);
-		tfCONSUMER_SECRET.setText(Settings.consumer_secret);
-		tfOAUTH_TOKEN.setText(Settings.oauth_token);
-		tfOAUTH_TOKEN_SECRET.setText(Settings.oauth_token_secret);
+	public void loadTokenToInput(TumblrToken token)
+	{
+		tfCONSUMER_KEY.setText(token.getConsumer_key());
+		tfCONSUMER_SECRET.setText(token.getConsumer_secret());
+		tfOAUTH_TOKEN.setText(token.getOauth_token());
+		tfOAUTH_TOKEN_SECRET.setText(token.getOauth_token_secret());
 	}
-	public void resetKeys(){
+	public void resetKeys()
+	{
 		tfCONSUMER_KEY.setText("");
 		tfCONSUMER_SECRET.setText("");
 		tfOAUTH_TOKEN.setText("");

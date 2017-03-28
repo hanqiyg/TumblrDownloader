@@ -3,13 +3,37 @@ package com.icesoft.tumblr.downloader.workers;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.SocketAddress;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 
+import javax.net.ssl.SSLContext;
+import javax.security.cert.CertificateException;
+import javax.security.cert.X509Certificate;
+
+import org.apache.http.Consts;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.config.ConnectionConfig;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.ssl.SSLContexts;
+import org.apache.http.ssl.TrustStrategy;
 import org.apache.log4j.Logger;
 
 import com.icesoft.utils.MineType;
@@ -40,11 +64,74 @@ public class HttpGetVideoWorker implements IHttpGetWorker{
 		this.filepath = filepath;
 		this.state = STATE.WAIT;
 	}
-	public void init(){
+	public void init()
+	{
 		logger.info(Thread.currentThread().getName() + " : init HttpGetVideoWorker instance.");
-		client = HttpClients.createDefault();
-		get = new HttpGet(url);
+			//client = newClient(30*1000);
+			//client = buildAllowallClient();
+			//client = HttpClients.createDefault();
+
+			HttpHost proxy = new HttpHost("127.0.0.1", 1080);
+			DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
+			client = HttpClients.custom()
+			        .setRoutePlanner(routePlanner)
+			        .build();
+			get = new HttpGet(url);
+	}
+/*	public static CloseableHttpClient newClient(int timeout) throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException 
+	{
+		HttpClientBuilder builder = HttpClients.custom();
+		builder.useSystemProperties();
+		builder.disableAutomaticRetries();
 		
+		SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy() 
+		{
+			@Override
+			public boolean isTrusted(java.security.cert.X509Certificate[] arg0, String arg1)
+					throws java.security.cert.CertificateException {
+				return true;
+			}
+	    }).build();
+		builder.setSSLContext(sslContext);
+		builder.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+
+		RequestConfig.Builder configBuilder = RequestConfig.custom();
+		configBuilder.setCookieSpec(CookieSpecs.IGNORE_COOKIES);
+		configBuilder.setSocketTimeout(timeout);
+		configBuilder.setConnectTimeout(timeout);
+		configBuilder.setConnectionRequestTimeout(timeout);
+		builder.setDefaultRequestConfig(configBuilder.build());
+
+		builder.setDefaultConnectionConfig(ConnectionConfig.custom().setCharset(Consts.ISO_8859_1).build());
+
+		return builder.build();
+	}*/
+	private static CloseableHttpClient buildAllowallClient() {
+	    String[] protocols =  getSSLPrototocolsFromSystemProperties();
+	    //SSLContext sslcontext = SSLContexts.createDefault();
+	    SSLContext sslcontext;
+	    try {
+	        sslcontext = SSLContexts.custom().loadTrustMaterial(null, new TrustSelfSignedStrategy()).build();
+	    } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+	        throw new RuntimeException(e);
+	    }
+	    // Allow TLSv1 protocol only
+	    SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslcontext, protocols, null, new NoopHostnameVerifier());
+	    CloseableHttpClient httpclient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+
+	    return httpclient;
+	}
+	
+	private static String[] getSSLPrototocolsFromSystemProperties() 
+	{
+		 String protocols = System.getProperty("jdk.tls.client.protocols");
+        if (protocols == null)
+            protocols = System.getProperty("https.protocols");
+        if (protocols != null) {
+            String[] protocolsArray = protocols.split(",");
+            return protocolsArray;
+        }
+        return null;
 	}
 	public boolean query(){
 		logger.info(Thread.currentThread().getName() + " : HttpGetVideoWorker query task begin.");

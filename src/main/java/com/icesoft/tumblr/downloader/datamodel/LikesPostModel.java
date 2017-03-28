@@ -32,7 +32,7 @@ public class LikesPostModel extends AbstractTableModel {
 
 	@Override
 	public boolean isCellEditable(int row, int col) {
-		if(col == 4){
+		if(col == 5){
 			return true;
 		}else{
 			return false;
@@ -45,7 +45,8 @@ public class LikesPostModel extends AbstractTableModel {
 			case 1 : return PostService.getInstance().getPosts().get(row).getType();
 			case 2 : return PostService.getInstance().getPosts().get(row).getPostUrl();
 			case 3 : return PostService.getInstance().getPosts().get(row).getNoteCount();
-			case 4 : return PostService.getInstance().getPosts().get(row);
+			case 4 : return null;
+			case 5 : return PostService.getInstance().getPosts().get(row);
 		}
 		return null;
 	}

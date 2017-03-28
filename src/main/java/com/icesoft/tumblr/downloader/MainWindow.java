@@ -3,8 +3,10 @@ package com.icesoft.tumblr.downloader;
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 import java.util.Properties;
 
 import javax.swing.JFrame;
@@ -46,7 +48,14 @@ public class MainWindow {
 							refresh = false;
 							QueryManager.getInstance().stopQuery();
 							DownloadManager.getInstance().stopAll();
-							Settings.saveWindowSettings();
+							try {
+								HttpClientConnectionManager.getInstance().shutdown();
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+							Rectangle bounds = window.frame.getBounds();
+							Settings.getInstance().setWindowSettings(bounds.x, bounds.y, bounds.width, bounds.height);
 							System.out.println("关闭主窗口退出！");
 							System.exit(0);
 						}
@@ -61,15 +70,19 @@ public class MainWindow {
 		initialize();
 	}
 	private void initialize() {
-		settings = new Settings();
 		//services = new TumblrServices();
-		frame = new JFrame();
-		frame.setBounds(Settings.x, Settings.y, Settings.w, Settings.h);
+		frame = new JFrame();		
+		frame.setBounds(
+					Settings.getInstance().getWindowSetting().getX(),
+					Settings.getInstance().getWindowSetting().getY(),
+					Settings.getInstance().getWindowSetting().getW(),
+					Settings.getInstance().getWindowSetting().getH()
+				);		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		likesPanel = new LikesPanel(settings,services);
-		settingsPanel = new SettingsPanel(settings,services);
-		downloadPanel = new DownloadPanel(settings,services);
+		likesPanel = new LikesPanel();
+		settingsPanel = new SettingsPanel();
+		downloadPanel = new DownloadPanel();
 		resourceStatusPanel = new ResourceStatusPanel();
 		
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
@@ -86,8 +99,8 @@ public class MainWindow {
 		frame.getContentPane().add(tabbedPane);
 		
 		Properties systemProperties = System.getProperties();
-		systemProperties.setProperty("socksProxyHost",Settings.proxy_socket_address	);
-		systemProperties.setProperty("socksProxyPort",Settings.proxy_socket_port	);
+		systemProperties.setProperty("socksProxyHost",Settings.getInstance().getProxySettings().getHost());
+		systemProperties.setProperty("socksProxyPort",String.valueOf(Settings.getInstance().getProxySettings().getPort()));
 		
 		 //Enable header wire + context logging - Best for Debugging
 /*	    System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");

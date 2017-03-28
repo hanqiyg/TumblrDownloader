@@ -46,35 +46,8 @@ public class UrlService
                 	{
                     	vi.posterUrl = t.getPoster();
                 	}
-                	String opt = t.getOption();                	
-                	JsonReader reader = new JsonReader(new StringReader(opt));
-                	reader.setLenient(true);
-            		reader.beginObject();
-            
-                	while(reader.hasNext()){
-            			String tagName = reader.nextName();
-            			if(tagName.equals("hdUrl")){            				
-            				vi.hdUrl = getStringToken(reader,vi.hdUrl);
-            			}else if(tagName.equals("filmstrip"))
-            			{
-            		 		reader.beginObject();
-            				while(reader.hasNext())
-            				{
-            					if(reader.nextName().equals("url"))
-            					{	
-            						vi.hdPosterUrl = getStringToken(reader,vi.hdPosterUrl);              					
-            					}else
-            					{
-            						reader.skipValue();
-            					}
-            				}
-            				reader.endObject();
-            			}else{
-            				reader.skipValue();
-            			}
-                	}
-                	reader.endObject();
-                	reader.close();
+                	String opt = t.getOption();      	
+                	findVideoInfoFromEmbed(opt,vi);
                 }
                 if(eachNode!= null && eachNode instanceof SourceTag)
                 {
@@ -92,13 +65,99 @@ public class UrlService
 		}
 		return vi;	
 	}
-	public static String getStringToken(JsonReader reader,String s) throws IOException{
-			JsonToken nextToken = reader.peek();
-			if(JsonToken.STRING.equals(nextToken)){
-				s = reader.nextString();
-			}else{
-				reader.skipValue();
-			}
+	public static String getStringToken(JsonReader reader,String s) throws IOException
+	{
+		JsonToken nextToken = reader.peek();
+		if(JsonToken.STRING.equals(nextToken)){
+			s = reader.nextString();
+		}else{
+			reader.skipValue();
+		}
 		return s;
+	}
+	public static void findVideoInfoFromEmbed(String embed,VideoInfo info) throws IOException
+	{	
+		JsonReader jsonReader = new JsonReader(new StringReader(embed));
+		jsonReader.setLenient(true);
+        while(jsonReader.hasNext()){
+            JsonToken nextToken = jsonReader.peek();
+            if(JsonToken.BEGIN_OBJECT.equals(nextToken)){
+                jsonReader.beginObject();
+            } else if(JsonToken.NAME.equals(nextToken)){
+                String name  =  jsonReader.nextName();
+                if(name.equals("hdUrl")){
+                	JsonToken token = jsonReader.peek();
+                	if(JsonToken.STRING.equals(token))
+                	{
+                		info.hdUrl = jsonReader.nextString();
+                	}else
+                	{
+                		info.hdUrl = null;
+                		jsonReader.skipValue();
+                	}
+                }else if(name.equals("filmstrip")){
+                	JsonToken token = jsonReader.peek();
+                	if(JsonToken.STRING.equals(token))
+                	{
+                		String strip = jsonReader.nextString();
+                		findPosterFromFileStrip(strip, info);
+                	}else
+                	{
+                		jsonReader.skipValue();
+                	}
+                }else{
+                	jsonReader.skipValue();
+                }           
+            }else if(JsonToken.END_OBJECT.equals(nextToken)){                        	
+            	jsonReader.endObject();
+            }else if(JsonToken.BEGIN_ARRAY.equals(nextToken)){                        	
+            	jsonReader.beginArray();
+            }else if(JsonToken.END_ARRAY.equals(nextToken)){                        	
+            	jsonReader.endArray();
+            }else{
+            	jsonReader.skipValue();
+            }
+        }
+		jsonReader.close();
+	}
+	private static void findPosterFromFileStrip(String strip,VideoInfo info) throws IOException {
+		JsonReader jsonReader = new JsonReader(new StringReader(strip));
+		jsonReader.setLenient(true);
+        while(jsonReader.hasNext())
+        {
+            JsonToken nextToken = jsonReader.peek();
+            if(JsonToken.BEGIN_OBJECT.equals(nextToken))
+            {
+                jsonReader.beginObject();
+            } else if(JsonToken.NAME.equals(nextToken))
+            {
+                String name  =  jsonReader.nextName();
+                if(name.equals("url")){
+                	JsonToken token = jsonReader.peek();
+                	if(JsonToken.STRING.equals(token))
+                	{
+                		info.hdPosterUrl = jsonReader.nextString();
+                	}else
+                	{
+                		info.hdPosterUrl = null;
+                		jsonReader.skipValue();
+                	}                
+                }else{
+                	jsonReader.skipValue();
+                }           
+            }else if(JsonToken.END_OBJECT.equals(nextToken))
+            {                        	
+            	jsonReader.endObject();
+            }else if(JsonToken.BEGIN_ARRAY.equals(nextToken))
+            {                        	
+            	jsonReader.beginArray();
+            }else if(JsonToken.END_ARRAY.equals(nextToken))
+            {                        	
+            	jsonReader.endArray();
+            }else{
+            	jsonReader.skipValue();
+            }
+        }
+        jsonReader.close();
 	}
 }

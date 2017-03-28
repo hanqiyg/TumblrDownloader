@@ -6,11 +6,18 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.net.ssl.SSLContext;
+
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.log4j.Logger;
 
 import com.icesoft.tumblr.downloader.workers.HttpGetImageWorker;
 import com.icesoft.tumblr.downloader.workers.HttpGetVideoWorker;
 import com.icesoft.tumblr.downloader.workers.IHttpGetWorker;
+import com.icesoft.tumblr.downloader.workers.PoolingHttpGetImageWorker;
+import com.icesoft.tumblr.downloader.workers.PoolingHttpGetVideoWorker;
 import com.icesoft.tumblr.model.ImageInfo;
 import com.icesoft.tumblr.model.VideoInfo;
 
@@ -42,7 +49,8 @@ public class DownloadManager {
 		if(videoURL != null && !duplicates.contains(videoURL))
 		{
 			duplicates.add(videoURL);
-			HttpGetVideoWorker worker = new HttpGetVideoWorker(videoURL,Settings.save_location + File.separator + info.blogName + File.separator + info.id);
+			PoolingHttpGetVideoWorker worker = new PoolingHttpGetVideoWorker(HttpClientConnectionManager.getInstance().getHttpClient(),
+					videoURL,Settings.getInstance().getSaveLocation() + File.separator + info.blogName + File.separator + info.id);
 			workers.add(worker);
 			pool.submit(worker);
 		}else
@@ -55,7 +63,8 @@ public class DownloadManager {
 		if(info.getURL() != null && !info.getURL().trim().equals("") && !duplicates.contains(info.getURL()))
 		{
 			duplicates.add(info.getURL());
-			HttpGetImageWorker worker = new HttpGetImageWorker(info.getURL(),Settings.save_location + File.separator + info.blogName + File.separator + info.id);
+			PoolingHttpGetImageWorker worker = new PoolingHttpGetImageWorker(HttpClientConnectionManager.getInstance().getHttpClient(),
+					info.getURL(),Settings.getInstance().getSaveLocation() + File.separator + info.blogName + File.separator + info.id);
 			workers.add(worker);
 			pool.submit(worker);
 		}else

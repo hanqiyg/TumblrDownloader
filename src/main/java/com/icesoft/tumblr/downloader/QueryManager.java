@@ -18,6 +18,9 @@ public class QueryManager {
 	public static QueryManager getInstance(){
 		return instance;
 	}
+	public IQueryWorker getWorker(){
+		return worker;
+	}
 	
 	public void ExecLikedQurey()
 	{
