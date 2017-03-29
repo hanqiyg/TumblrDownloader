@@ -3,6 +3,7 @@ package com.icesoft.tumblr.downloader.datamodel;
 import javax.swing.table.AbstractTableModel;
 
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
+import com.icesoft.tumblr.downloader.workers.DownloadTask;
 import com.icesoft.utils.UnitUtils;
 
 public class DownloadModel extends AbstractTableModel {
@@ -35,18 +36,27 @@ public class DownloadModel extends AbstractTableModel {
 	}
 	@Override
 	public Object getValueAt(int row, int col) {
-		DownloadManager manager = DownloadManager.getInstance();
+		DownloadTask task = DownloadManager.getInstance().getTasks().get(row).getTask();
 		switch(col){
 			case 0 : return row;
-			case 1 : return manager.getTasks().get(row).getFilename();
-			case 2 : return manager.getTasks().get(row).getUrl();
-			case 3 : return manager.getTasks().get(row).getState();
-			case 4 : return manager.getTasks().get(row).getProgress();
-			case 5 : return getSpeedString(manager.getTasks().get(row).getSpeed());
-			case 6 : return getSizeString(manager.getTasks().get(row).getCurrent());
-			case 7 : return getSizeString(manager.getTasks().get(row).getFilesize());
+			case 1 : return task.getFile().getAbsolutePath();
+			case 2 : return task.getURL();
+			case 3 : return task.getState();
+			case 4 : return getProgress(task);
+			case 5 : return getSpeedString(task.getCurrentSpeed());
+			case 6 : return getSizeString(task.getCurrentSize());
+			case 7 : return getSizeString(task.getFilesize());
 		}
 		return null;
+	}
+	public int getProgress(DownloadTask task){
+		long curr = task.getCurrentSize();
+		long full = task.getFilesize();
+		if(full <= 0){
+			return 0;
+		}else{
+			return (int) (curr * 100 / full);
+		}
 	}
 	public String getSpeedString(float speed){
 		int bps = (int) (speed * 1000);

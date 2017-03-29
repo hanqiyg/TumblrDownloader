@@ -6,6 +6,7 @@ import javax.swing.JTable;
 import org.apache.log4j.Logger;
 import org.htmlparser.util.ParserException;
 
+import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.downloader.datamodel.ControllCellEditor;
 import com.icesoft.tumblr.downloader.datamodel.LikesPostModel;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
@@ -15,6 +16,7 @@ import com.icesoft.tumblr.downloader.service.PostService;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.downloader.service.UrlService;
 import com.icesoft.tumblr.downloader.workers.AllLikedQueryWorker;
+import com.icesoft.tumblr.downloader.workers.DownloadTask;
 import com.icesoft.tumblr.model.ImageInfo;
 import com.icesoft.tumblr.model.VideoInfo;
 import com.tumblr.jumblr.types.Photo;
@@ -31,6 +33,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.awt.event.ActionEvent;
@@ -102,7 +105,6 @@ public class LikesPanel extends JPanel implements IUpdatable{
 		btnAddAll = new JButton("DownloadAll");
 		btnAddAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				LikesPostModel model = (LikesPostModel) table.getModel();
 				for(Post post : PostService.getInstance().getPosts()){
 					if(post instanceof VideoPost){
 						VideoPost v = (VideoPost) post;
@@ -110,12 +112,15 @@ public class LikesPanel extends JPanel implements IUpdatable{
 						for(Video vi:videos){
 							String embed = vi.getEmbedCode();
 							System.out.println(embed);
-							VideoInfo info;
-							try {
-								info = UrlService.getVideoInfoFromEmbed(embed);
-								info.blogName = TumblrServices.getInstance().getBlogName(v);
-								info.id = TumblrServices.getInstance().getBlogId(v);
-								DownloadManager.getInstance().addVideoTask(info);
+							try {								
+								VideoInfo info = UrlService.getVideoInfoFromEmbed(embed);
+								String url = info.getURL();
+								String poster = info.getPosterURL();
+								String saveLocation = Settings.getInstance().getSaveLocation();
+								String id = TumblrServices.getInstance().getBlogId(v);
+								String name = TumblrServices.getInstance().getBlogName(v);
+								DownloadManager.getInstance().addTask(new DownloadTask(url, saveLocation + File.separator + name + File.separator + id));
+								DownloadManager.getInstance().addTask(new DownloadTask(poster, saveLocation + File.separator + name + File.separator + id));
 							} catch (ParserException | IOException e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
@@ -126,7 +131,11 @@ public class LikesPanel extends JPanel implements IUpdatable{
 						PhotoPost photoPost = (PhotoPost) post;
 						for(Photo photo : photoPost.getPhotos()){
 							String url = photo.getOriginalSize().getUrl();								
-							DownloadManager.getInstance().addImageTask(new ImageInfo(url,TumblrServices.getInstance().getBlogId(photoPost),TumblrServices.getInstance().getBlogName(photoPost)));
+							//DownloadManager.getInstance().addImageTask(new ImageInfo(url,TumblrServices.getInstance().getBlogId(photoPost),TumblrServices.getInstance().getBlogName(photoPost)));
+							String saveLocation = Settings.getInstance().getSaveLocation();
+							String id = TumblrServices.getInstance().getBlogId(photoPost);
+							String name = TumblrServices.getInstance().getBlogName(photoPost);
+							DownloadManager.getInstance().addTask(new DownloadTask(url, saveLocation + File.separator + name + File.separator + id));
 						}
 					}
 				}

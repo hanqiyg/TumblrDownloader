@@ -50,7 +50,7 @@ public class HttpClientConnectionManager
 		                } catch(NumberFormatException ignore) {}
 		            }
 		        }
-		        return 30 * 1000;
+		        return 50 * 1000;
 		    }
 		};
 		HttpHost proxy = new HttpHost(

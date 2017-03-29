@@ -6,7 +6,7 @@ import java.util.concurrent.Executors;
 import org.apache.log4j.Logger;
 
 import com.icesoft.tumblr.downloader.workers.AllLikedQueryWorker;
-import com.icesoft.tumblr.downloader.workers.IQueryWorker;
+import com.icesoft.tumblr.downloader.workers.interfaces.IQueryWorker;
 
 public class QueryManager {
 	private static Logger logger = Logger.getLogger(QueryManager.class);  

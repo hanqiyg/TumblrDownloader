@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.icesoft.tumblr.downloader.service.PostService;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
+import com.icesoft.tumblr.downloader.workers.interfaces.IQueryWorker;
 import com.tumblr.jumblr.types.Post;
 
 public class AllLikedQueryWorker implements IQueryWorker{

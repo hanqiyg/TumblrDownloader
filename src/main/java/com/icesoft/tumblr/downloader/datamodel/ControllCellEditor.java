@@ -2,6 +2,7 @@ package com.icesoft.tumblr.downloader.datamodel;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import javax.swing.AbstractCellEditor;
@@ -13,9 +14,11 @@ import javax.swing.table.TableCellRenderer;
 import org.apache.log4j.Logger;
 import org.htmlparser.util.ParserException;
 
+import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.downloader.service.UrlService;
+import com.icesoft.tumblr.downloader.workers.DownloadTask;
 import com.icesoft.tumblr.model.ImageInfo;
 import com.icesoft.tumblr.model.VideoInfo;
 import com.tumblr.jumblr.types.Photo;
@@ -61,16 +64,17 @@ public class ControllCellEditor extends AbstractCellEditor implements TableCellR
 					List<Video> videos = v.getVideos();
 					for(Video vi:videos){
 						String embed = vi.getEmbedCode();
-						VideoInfo info;
-						try {
-							info = UrlService.getVideoInfoFromEmbed(embed);
-							info.blogName = TumblrServices.getInstance().getBlogName(v);
-							info.id = TumblrServices.getInstance().getBlogId(v);
-							DownloadManager.getInstance().addVideoTask(info);
-						} catch (ParserException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						} catch (IOException e1) {
+						System.out.println(embed);
+						try {								
+							VideoInfo info = UrlService.getVideoInfoFromEmbed(embed);
+							String url = info.getURL();
+							String poster = info.getPosterURL();
+							String saveLocation = Settings.getInstance().getSaveLocation();
+							String id = TumblrServices.getInstance().getBlogId(v);
+							String name = TumblrServices.getInstance().getBlogName(v);
+							DownloadManager.getInstance().addTask(new DownloadTask(url, saveLocation + File.separator + name + File.separator + id));
+							DownloadManager.getInstance().addTask(new DownloadTask(poster, saveLocation + File.separator + name + File.separator + id));
+						} catch (ParserException | IOException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
@@ -78,7 +82,14 @@ public class ControllCellEditor extends AbstractCellEditor implements TableCellR
 				}
 				if(post instanceof PhotoPost){
 					PhotoPost photoPost = (PhotoPost) post;
-					downloadImage(photoPost);
+					for(Photo photo : photoPost.getPhotos()){
+						String url = photo.getOriginalSize().getUrl();								
+						//DownloadManager.getInstance().addImageTask(new ImageInfo(url,TumblrServices.getInstance().getBlogId(photoPost),TumblrServices.getInstance().getBlogName(photoPost)));
+						String saveLocation = Settings.getInstance().getSaveLocation();
+						String id = TumblrServices.getInstance().getBlogId(photoPost);
+						String name = TumblrServices.getInstance().getBlogName(photoPost);
+						DownloadManager.getInstance().addTask(new DownloadTask(url, saveLocation + File.separator + name + File.separator + id));
+					}
 				}
 			}		
 		});
@@ -105,12 +116,5 @@ public class ControllCellEditor extends AbstractCellEditor implements TableCellR
 	@Override
 	public Object getCellEditorValue() {
 		return null;
-	}
-	public void downloadImage(PhotoPost p){
-		List<Photo> photos = p.getPhotos();
-		for(Photo photo : photos){
-			String url = photo.getOriginalSize().getUrl();						
-			DownloadManager.getInstance().addImageTask(new ImageInfo(url,TumblrServices.getInstance().getBlogId(p),TumblrServices.getInstance().getBlogName(p)));			
-		}
 	}
 }
