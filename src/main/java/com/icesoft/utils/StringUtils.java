@@ -8,10 +8,8 @@ import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.log4j.Logger;
 
-import com.icesoft.tumblr.downloader.DownloadManager;
-
 public class StringUtils {
-	private static Logger logger = Logger.getLogger(DownloadManager.class);  
+	private static Logger logger = Logger.getLogger(StringUtils.class);  
 	public static String getFilenameFromDisposition(HttpResponse response){
 		Header contentHeader = response.getFirstHeader("Content-Disposition");  
         String filename = null;  

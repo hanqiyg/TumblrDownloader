@@ -7,7 +7,7 @@ import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import javax.swing.JTextField;
 
-import com.icesoft.tumblr.downloader.Settings;
+import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.settings.TumblrToken;
 

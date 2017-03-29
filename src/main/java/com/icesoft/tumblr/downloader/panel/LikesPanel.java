@@ -6,10 +6,11 @@ import javax.swing.JTable;
 import org.apache.log4j.Logger;
 import org.htmlparser.util.ParserException;
 
-import com.icesoft.tumblr.downloader.DownloadManager;
-import com.icesoft.tumblr.downloader.QueryManager;
 import com.icesoft.tumblr.downloader.datamodel.ControllCellEditor;
 import com.icesoft.tumblr.downloader.datamodel.LikesPostModel;
+import com.icesoft.tumblr.downloader.managers.DownloadManager;
+import com.icesoft.tumblr.downloader.managers.QueryManager;
+import com.icesoft.tumblr.downloader.panel.interfaces.IUpdatable;
 import com.icesoft.tumblr.downloader.service.PostService;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.downloader.service.UrlService;
@@ -34,7 +35,7 @@ import java.io.IOException;
 import java.util.List;
 import java.awt.event.ActionEvent;
 
-public class LikesPanel extends JPanel implements IRefreshable{
+public class LikesPanel extends JPanel implements IUpdatable{
 	private static Logger logger = Logger.getLogger(LikesPanel.class);  
 	private static final long serialVersionUID = 4111940040655069650L;
 	private JTable table;
@@ -178,7 +179,7 @@ public class LikesPanel extends JPanel implements IRefreshable{
 	}
 
 	@Override
-	public void refresh() {
+	public void update() {
 		if(model!= null){
 			model.fireTableDataChanged();
 		}

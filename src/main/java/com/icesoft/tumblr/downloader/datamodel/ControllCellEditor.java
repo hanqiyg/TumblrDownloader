@@ -13,8 +13,7 @@ import javax.swing.table.TableCellRenderer;
 import org.apache.log4j.Logger;
 import org.htmlparser.util.ParserException;
 
-import com.icesoft.tumblr.downloader.DownloadManager;
-import com.icesoft.tumblr.downloader.Settings;
+import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.downloader.service.UrlService;
 import com.icesoft.tumblr.model.ImageInfo;

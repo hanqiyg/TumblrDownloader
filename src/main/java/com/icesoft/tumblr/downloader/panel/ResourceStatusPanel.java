@@ -5,9 +5,9 @@ import java.awt.GridLayout;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 
-import com.icesoft.tumblr.downloader.MainWindow;
+import com.icesoft.tumblr.downloader.panel.interfaces.IUpdatable;
 
-public class ResourceStatusPanel extends JPanel implements IRefreshable{
+public class ResourceStatusPanel extends JPanel implements IUpdatable{
 	private static final long serialVersionUID = 1186855036022070205L;
 	private JProgressBar pbMemory;
 	public ResourceStatusPanel() {
@@ -36,7 +36,7 @@ public class ResourceStatusPanel extends JPanel implements IRefreshable{
 	}
 
 	@Override
-	public void refresh() {
+	public void update() {
 		updateMemory();	
 	}
 }

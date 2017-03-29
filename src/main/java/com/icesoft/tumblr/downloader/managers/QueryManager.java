@@ -1,4 +1,4 @@
-package com.icesoft.tumblr.downloader;
+package com.icesoft.tumblr.downloader.managers;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,7 +9,7 @@ import com.icesoft.tumblr.downloader.workers.AllLikedQueryWorker;
 import com.icesoft.tumblr.downloader.workers.IQueryWorker;
 
 public class QueryManager {
-	private static Logger logger = Logger.getLogger(DownloadManager.class);  
+	private static Logger logger = Logger.getLogger(QueryManager.class);  
 	private static QueryManager instance = new QueryManager();
 	private ExecutorService single = Executors.newSingleThreadExecutor();
 	private IQueryWorker worker;

@@ -2,7 +2,7 @@ package com.icesoft.tumblr.downloader.datamodel;
 
 import javax.swing.table.AbstractTableModel;
 
-import com.icesoft.tumblr.downloader.DownloadManager;
+import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.utils.UnitUtils;
 
 public class DownloadModel extends AbstractTableModel {

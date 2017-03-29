@@ -5,25 +5,18 @@ import javax.swing.JTable;
 
 import org.apache.http.pool.PoolStats;
 
-import com.icesoft.tumblr.downloader.DownloadManager;
-import com.icesoft.tumblr.downloader.HttpClientConnectionManager;
-import com.icesoft.tumblr.downloader.MainWindow;
-import com.icesoft.tumblr.downloader.Settings;
 import com.icesoft.tumblr.downloader.datamodel.DownloadModel;
 import com.icesoft.tumblr.downloader.datamodel.ProgressCellRenderer;
-import com.icesoft.tumblr.downloader.service.TumblrServices;
-import com.icesoft.tumblr.downloader.workers.IHttpGetWorker;
+import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
+import com.icesoft.tumblr.downloader.panel.interfaces.IUpdatable;
 
 import javax.swing.JScrollPane;
-import java.awt.GridLayout;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import java.util.List;
-
 import javax.swing.JLabel;
 
-public class DownloadPanel extends JPanel implements IRefreshable{
+public class DownloadPanel extends JPanel implements IUpdatable{
 	private static final long serialVersionUID = 4111940040655069650L;
 	private JTable table;
 	private DownloadModel model;
@@ -62,6 +55,7 @@ public class DownloadPanel extends JPanel implements IRefreshable{
 	}
 	public void loadStats(){
 		PoolStats s = HttpClientConnectionManager.getInstance().getStats();
+		
 		if(s != null){
 			lblStats.setText("HttpClient Usage:" + s.getLeased() + " / " + s.getMax());
 		}else{
@@ -70,7 +64,7 @@ public class DownloadPanel extends JPanel implements IRefreshable{
 	}
 
 	@Override
-	public void refresh() {
+	public void update() {
 		if(model!= null){
 			model.fireTableDataChanged();
 			loadStats();

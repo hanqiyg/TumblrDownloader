@@ -1,4 +1,4 @@
-package com.icesoft.tumblr.downloader;
+package com.icesoft.tumblr.downloader.managers;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -7,7 +7,6 @@ import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -19,11 +18,14 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 
+import com.icesoft.tumblr.downloader.configure.Settings;
+import com.icesoft.tumblr.downloader.monitor.IdleConnectionMonitor;
+
 public class HttpClientConnectionManager 
 {
 	private static Logger logger = Logger.getLogger(HttpClientConnectionManager.class);  
 	private PoolingHttpClientConnectionManager connManager;
-	private IdleConnectionMonitorThread monitor;
+	private IdleConnectionMonitor monitor;
 	private CloseableHttpClient client;
 
 	private static HttpClientConnectionManager instance = new HttpClientConnectionManager();
@@ -58,13 +60,13 @@ public class HttpClientConnectionManager
 		DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
 		connManager = new PoolingHttpClientConnectionManager();
 		connManager.setDefaultMaxPerRoute(5);
-		connManager.setMaxTotal(5);
+		connManager.setMaxTotal(Settings.getInstance().getHttpClientCount());
 		client = HttpClients.custom()
 				  .setConnectionManager(connManager)
 				  .setRoutePlanner(routePlanner)
 				  .setKeepAliveStrategy(myStrategy)
 				  .build();
-		monitor = new IdleConnectionMonitorThread(this);
+		monitor = new IdleConnectionMonitor(this);
 		monitor.start();		
 	}
 	public static HttpClientConnectionManager getInstance(){

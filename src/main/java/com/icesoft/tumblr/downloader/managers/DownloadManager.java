@@ -1,4 +1,4 @@
-package com.icesoft.tumblr.downloader;
+package com.icesoft.tumblr.downloader.managers;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -6,15 +6,10 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.net.ssl.SSLContext;
-
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.ssl.SSLContexts;
 import org.apache.log4j.Logger;
 
-import com.icesoft.tumblr.downloader.workers.HttpGetImageWorker;
-import com.icesoft.tumblr.downloader.workers.HttpGetVideoWorker;
+import com.icesoft.tumblr.downloader.configure.Settings;
+import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
 import com.icesoft.tumblr.downloader.workers.IHttpGetWorker;
 import com.icesoft.tumblr.downloader.workers.PoolingHttpGetImageWorker;
 import com.icesoft.tumblr.downloader.workers.PoolingHttpGetVideoWorker;
@@ -25,7 +20,7 @@ import com.icesoft.tumblr.model.VideoInfo;
 public class DownloadManager {
 	private static Logger logger = Logger.getLogger(DownloadManager.class);  
 	private static DownloadManager instance = new DownloadManager();
-	private ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());	
+	private ExecutorService pool = Executors.newFixedThreadPool(Settings.getInstance().getWorkerCount());	
 	private List<IHttpGetWorker> workers = new ArrayList<IHttpGetWorker>();
 	private List<String> duplicates = new ArrayList<String>();
 	private DownloadManager(){}

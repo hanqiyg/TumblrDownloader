@@ -1,4 +1,4 @@
-package com.icesoft.tumblr.downloader;
+package com.icesoft.tumblr.downloader.configure;
 
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -7,6 +7,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.log4j.Logger;
 
+import com.icesoft.tumblr.downloader.configure.Constants.DownloadManagerConfigure;
+import com.icesoft.tumblr.downloader.configure.Constants.HttpClientConnectionManagerConfigure;
 import com.icesoft.tumblr.settings.ProxySettings;
 import com.icesoft.tumblr.settings.TumblrToken;
 import com.icesoft.tumblr.settings.WindowSettings;
@@ -18,18 +20,14 @@ public class Settings {
 
 	public int buffer_size = 1024;
 	
-	public String proxy_socket_address="127.0.0.1";
-	public String proxy_socket_port="1080"; 
-	
 	public int connect_timeout = 20000;
 	public int read_timeout = 20000;
 	
-	public String save_location;
+	private String save_location;
 	
-	public final int threadCount = 20;
-	
+	private int workerCount;
+	private int httpClientCount;	
 
-	
 	private static Settings instance = new Settings();
 	private TumblrToken token;
 	private WindowSettings windowSettings;
@@ -151,6 +149,52 @@ public class Settings {
 			prefs.put("Proxy.Type",		proxySettings.getType().toString());
 			prefs.put("Proxy.Host", 	proxySettings.getHost());
 			prefs.putInt("Proxy.Port", 	proxySettings.getPort());
+			prefs.flush();
+		} catch (BackingStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	public int getWorkerCount() {
+		if(this.workerCount <= 0){
+			this.workerCount = prefs.getInt(DownloadManagerConfigure.WorkerCount.getKey(), 
+					DownloadManagerConfigure.WorkerCount.getValue());
+		}
+		return workerCount;
+	}
+
+	public void saveWorkerCount(){
+		if(this.workerCount <= 0){
+			this.workerCount = DownloadManagerConfigure.WorkerCount.getValue();
+		}
+		try {
+			prefs.putInt(DownloadManagerConfigure.WorkerCount.getKey(),	this.workerCount);
+			prefs.flush();
+		} catch (BackingStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void setWorkerCount(int workerCount) {
+		this.workerCount = workerCount;
+	}
+	public int getHttpClientCount() {
+		if(this.httpClientCount <= 0){
+			this.httpClientCount = prefs.getInt(HttpClientConnectionManagerConfigure.MaxTotal.getKey(),
+					HttpClientConnectionManagerConfigure.MaxTotal.getValue());
+		}
+		return httpClientCount;
+	}
+	public void setHttpClientCount(int httpClientCount) {
+		this.httpClientCount = httpClientCount;
+	}
+	public void saveHttpClientCount(){
+		if(this.httpClientCount <= 0){
+			this.httpClientCount = HttpClientConnectionManagerConfigure.MaxTotal.getValue();
+		}
+		try {
+			prefs.putInt(HttpClientConnectionManagerConfigure.MaxTotal.getKey(),	this.httpClientCount);
 			prefs.flush();
 		} catch (BackingStoreException e) {
 			// TODO Auto-generated catch block

@@ -1,11 +1,13 @@
-package com.icesoft.tumblr.downloader;
+package com.icesoft.tumblr.downloader.monitor;
 
 import java.util.concurrent.TimeUnit;
 
-public class IdleConnectionMonitorThread extends Thread {    
+import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
+
+public class IdleConnectionMonitor extends Thread {    
     private final HttpClientConnectionManager connMgr;
     private volatile boolean shutdown;    
-    public IdleConnectionMonitorThread(HttpClientConnectionManager connMgr) {
+    public IdleConnectionMonitor(HttpClientConnectionManager connMgr) {
         super();
         this.connMgr = connMgr;
     }

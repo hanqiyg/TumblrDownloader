@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.icesoft.tumblr.downloader.Settings;
+import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.settings.TumblrToken;
 import com.tumblr.jumblr.JumblrClient;
 import com.tumblr.jumblr.types.Post;
@@ -48,7 +48,7 @@ public class TumblrServices {
 	}
 	public boolean connectService(){
 		try{
-			logger.info("Connecting to jumblr service.");
+			logger.info("Jumblr Service -> connecting.");
 				client = new JumblrClient(
 						Settings.getInstance().getToken().getConsumer_key(),
 						Settings.getInstance().getToken().getConsumer_secret()
@@ -59,7 +59,7 @@ public class TumblrServices {
 			user = client.user();
 			return true;
 		}catch(Exception e){
-			logger.error("Jumblr Service -> testConnect: failure. " + e.getMessage()); 
+			logger.error("Jumblr Service -> connect: failure. " + e.getMessage()); 
 			return false;
 		}	
 	}

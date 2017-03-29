@@ -6,6 +6,7 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -13,23 +14,51 @@ import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
+import com.icesoft.tumblr.downloader.configure.Settings;
+import com.icesoft.tumblr.downloader.managers.DownloadManager;
+import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
+import com.icesoft.tumblr.downloader.managers.QueryManager;
+import com.icesoft.tumblr.downloader.monitor.UIMonitor;
 import com.icesoft.tumblr.downloader.panel.DownloadPanel;
 import com.icesoft.tumblr.downloader.panel.LikesPanel;
 import com.icesoft.tumblr.downloader.panel.ResourceStatusPanel;
 import com.icesoft.tumblr.downloader.panel.SettingsPanel;
-import com.icesoft.tumblr.downloader.service.TumblrServices;
 
 
 public class MainWindow {
+	static {
+		Properties pro = new Properties();
+		pro.put("log4j.rootLogger", "debug,stdout,R,A");
+
+		pro.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
+		pro.put("log4j.appender.stdout.Target","System.out");
+		pro.put("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
+		pro.put("log4j.appender.stdout.layout.ConversionPattern", "[%-5p] %d{yyyy-MM-dd HH:mm:ss,SSS} method:%l%n%m%n");
+
+		pro.put("log4j.appender.R", "org.apache.log4j.RollingFileAppender");
+		pro.put("log4j.appender.R.File", Settings.getInstance().getSaveLocation() + File.separator + "logs" + File.separator + "Info.log");
+		pro.put("log4j.appender.R.MaxFileSize", "10000KB");
+		pro.put("log4j.appender.R.MaxBackupIndex", "20");
+		pro.put("log4j.appender.R.Threshold", "INFO");
+		pro.put("log4j.appender.R.layout", "org.apache.log4j.PatternLayout");
+		pro.put("log4j.appender.R.layout.ConversionPattern", "%-d{yyyy-MM-dd HH:mm:ss}  [ %t:%r ] - [ %p ]  %m%n");
+
+		pro.put("log4j.appender.A", "org.apache.log4j.RollingFileAppender");
+		pro.put("log4j.appender.A.File", Settings.getInstance().getSaveLocation() + File.separator + "logs" + File.separator + "Error.log");
+		pro.put("log4j.appender.A.MaxFileSize", "10000KB");
+		pro.put("log4j.appender.A.MaxBackupIndex", "20");
+		pro.put("log4j.appender.A.Threshold", "ERROR");
+		pro.put("log4j.appender.A.layout", "org.apache.log4j.PatternLayout");
+		pro.put("log4j.appender.A.layout.ConversionPattern", "%n[%d{HH:mm:ss}] [%p] %m");
+
+		PropertyConfigurator.configure(pro);
+	}
 	private static Logger logger = Logger.getLogger(MainWindow.class);  
-	private JFrame 			frame;
-	private Settings 		settings;
-	private TumblrServices 	services;
+	private JFrame frame;	
 	
-	private Thread refresher;
-	
-	public static boolean refresh = true;
+	private UIMonitor monitor;
 	
 	private LikesPanel likesPanel;
 	private SettingsPanel settingsPanel;
@@ -45,7 +74,6 @@ public class MainWindow {
 					window.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 					window.frame.addWindowListener(new WindowAdapter(){
 						public void windowClosing(WindowEvent e){
-							refresh = false;
 							QueryManager.getInstance().stopQuery();
 							DownloadManager.getInstance().stopAll();
 							try {
@@ -117,31 +145,10 @@ public class MainWindow {
 		System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
 		System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
 		System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
-		refresh();
-	}
-	
-	public void refresh()
-	{
-		if(refresher == null)
-		{
-			refresher = new Thread()
-			{
-				@Override
-				public void run() 
-				{
-					while(refresh){	
-						try {
-							Thread.sleep(1000);
-							likesPanel.refresh();
-							downloadPanel.refresh();
-							resourceStatusPanel.refresh();
-						} catch (InterruptedException e) {
-							logger.error("refresh fail: " + e.getMessage());
-						}
-					}
-				}				
-			};
-		}
-		refresher.start();
+		monitor = new UIMonitor();
+		monitor.addUpdatable(likesPanel);
+		monitor.addUpdatable(downloadPanel);
+		monitor.addUpdatable(resourceStatusPanel);
+		monitor.start();		
 	}
 }
