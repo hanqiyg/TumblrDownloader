@@ -17,7 +17,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 
-import com.icesoft.tumblr.downloader.exceptions.HttpClientExecuteException;
+import com.icesoft.tumblr.downloader.exceptions.HttpClientQueryException;
 import com.icesoft.tumblr.downloader.exceptions.TaskInterruptedException;
 import com.icesoft.utils.MineType;
 import com.icesoft.utils.StringUtils;
@@ -75,7 +75,7 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 		}		
 		task.setMessage(msg);
 	}
-	public void init() throws TaskInterruptedException, HttpClientExecuteException{
+	public void init() throws TaskInterruptedException, HttpClientQueryException{
 		message("Query begin",DownloadTask.STATE.QUERY_RUNNING);
 		if(get.containsHeader("Range"))
 		{
@@ -84,7 +84,7 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 		try {
 			response = httpClient.execute(get,context);
 		} catch (IOException e) {
-			throw new HttpClientExecuteException();
+			throw new HttpClientQueryException();
 		}
 		if(response.getStatusLine().getStatusCode() == 200)
 		{
