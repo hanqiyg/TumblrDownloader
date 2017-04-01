@@ -1,23 +1,34 @@
 package com.icesoft.tumblr.downloader.panel;
 
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
 
-import org.apache.log4j.Logger;
 import org.htmlparser.util.ParserException;
 
 import com.icesoft.tumblr.downloader.configure.Settings;
-import com.icesoft.tumblr.downloader.datamodel.ControllCellEditor;
-import com.icesoft.tumblr.downloader.datamodel.LikesPostModel;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.managers.QueryManager;
 import com.icesoft.tumblr.downloader.panel.interfaces.IUpdatable;
 import com.icesoft.tumblr.downloader.service.PostService;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.downloader.service.UrlService;
+import com.icesoft.tumblr.downloader.tablemodel.LikesPostModel;
 import com.icesoft.tumblr.downloader.workers.AllLikedQueryWorker;
 import com.icesoft.tumblr.downloader.workers.DownloadTask;
-import com.icesoft.tumblr.model.ImageInfo;
 import com.icesoft.tumblr.model.VideoInfo;
 import com.tumblr.jumblr.types.Photo;
 import com.tumblr.jumblr.types.PhotoPost;
@@ -25,21 +36,8 @@ import com.tumblr.jumblr.types.Post;
 import com.tumblr.jumblr.types.Video;
 import com.tumblr.jumblr.types.VideoPost;
 
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JLabel;
-import javax.swing.JButton;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.awt.event.ActionEvent;
-
 public class LikesPanel extends JPanel implements IUpdatable{
-	private static Logger logger = Logger.getLogger(LikesPanel.class);  
+	//private static Logger logger = Logger.getLogger(LikesPanel.class);  
 	private static final long serialVersionUID = 4111940040655069650L;
 	private JTable table;
 	private JProgressBar progressBar;
@@ -105,13 +103,13 @@ public class LikesPanel extends JPanel implements IUpdatable{
 		btnAddAll = new JButton("DownloadAll");
 		btnAddAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				for(Post post : PostService.getInstance().getPosts()){
+				for (Iterator<Post> it = PostService.getInstance().getPosts().iterator(); it.hasNext();){
+					Post post = it.next();
 					if(post instanceof VideoPost){
 						VideoPost v = (VideoPost) post;
 						List<Video> videos = v.getVideos();
 						for(Video vi:videos){
 							String embed = vi.getEmbedCode();
-							System.out.println(embed);
 							try {								
 								VideoInfo info = UrlService.getVideoInfoFromEmbed(embed);
 								String url = info.getURL();
@@ -174,11 +172,6 @@ public class LikesPanel extends JPanel implements IUpdatable{
 		model = new LikesPostModel();
 		table.setModel(model);
 		
-		ControllCellEditor editor = new ControllCellEditor();
-		table.getColumn("OP").setCellEditor(editor);
-		table.getColumn("OP").setCellRenderer(editor);
-
-		
 		scrollPane.setColumnHeaderView(table.getTableHeader());
 		scrollPane.setViewportView(table);
 
@@ -199,7 +192,7 @@ public class LikesPanel extends JPanel implements IUpdatable{
 			progressBar.setValue(likedWorker.getQueryCount());
 			progressBar.setString(likedWorker.getQueryCount() + " / " + likedWorker.getLikedCount());
 			progressBar.setStringPainted(true);
+			progressBar.invalidate();
 		}
-
 	}	
 }

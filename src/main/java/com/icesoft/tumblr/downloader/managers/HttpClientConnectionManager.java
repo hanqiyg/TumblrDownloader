@@ -7,6 +7,7 @@ import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -16,14 +17,12 @@ import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.pool.PoolStats;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
-import org.apache.log4j.Logger;
-
 import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.downloader.monitor.IdleConnectionMonitor;
 
 public class HttpClientConnectionManager 
 {
-	private static Logger logger = Logger.getLogger(HttpClientConnectionManager.class);  
+	//private static Logger logger = Logger.getLogger(HttpClientConnectionManager.class);  
 	private PoolingHttpClientConnectionManager connManager;
 	private IdleConnectionMonitor monitor;
 	private CloseableHttpClient client;
@@ -50,9 +49,14 @@ public class HttpClientConnectionManager
 		                } catch(NumberFormatException ignore) {}
 		            }
 		        }
-		        return 50 * 1000;
+		        return 5 * 1000;
 		    }
 		};
+	   RequestConfig requestConfig = RequestConfig.custom()
+	            .setConnectionRequestTimeout(5 * 1000)
+	            .setSocketTimeout(5 * 1000)
+	            .setConnectionRequestTimeout(5 * 1000)
+	            .build();
 		HttpHost proxy = new HttpHost(
 				Settings.getInstance().getProxySettings().getHost(),
 				Settings.getInstance().getProxySettings().getPort()						
@@ -63,8 +67,9 @@ public class HttpClientConnectionManager
 		connManager.setMaxTotal(Settings.getInstance().getHttpClientCount());
 		client = HttpClients.custom()
 				  .setConnectionManager(connManager)
+				  .setDefaultRequestConfig(requestConfig)
 				  .setRoutePlanner(routePlanner)
-				  .setKeepAliveStrategy(myStrategy)
+				  .setKeepAliveStrategy(myStrategy)				
 				  .build();
 		monitor = new IdleConnectionMonitor(this);
 		monitor.start();		

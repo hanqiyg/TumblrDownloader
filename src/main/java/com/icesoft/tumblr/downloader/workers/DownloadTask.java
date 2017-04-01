@@ -2,6 +2,7 @@ package com.icesoft.tumblr.downloader.workers;
 
 import java.io.File;
 import java.util.Date;
+import java.util.concurrent.Future;
 
 public class DownloadTask 
 {
@@ -10,28 +11,37 @@ public class DownloadTask
 	private STATE 	state;
 	private String 	filename;
 	private String 	ext;
-	private long   	filesize = 0;
+	private long   	remoteFilesize;
+	private long 	localFilesize;
 	private long 	createTime;
 	private long 	totalTime;
 	
-	private long 	currentSize;
-	
-	private boolean run;
 	private long 	currentSpeed;
 	
 	private String  message;
+	private Future<Void> future;
 	
 	public enum STATE
 	{
-		QUERY_WAITING,QUERY_RUNNING,QUERY_COMPLETE,QUERY_EXCEPTION,DOWNLOAD_WAITING,DOWNLOAD_RUNNING,DOWNLOAD_PAUSING,DOWNLOAD_COMPLETE,DOWNLOAD_EXCEPTION
-	}	
+		QUERY_WAITING(1),QUERY_RUNNING(2),QUERY_COMPLETE(3),QUERY_EXCEPTION(4),
+		DOWNLOAD_WAITING(5),DOWNLOAD_RUNNING(6),DOWNLOAD_PAUSING(7),DOWNLOAD_COMPLETE(8),DOWNLOAD_EXCEPTION(9);
+		private int index;
+		private STATE(int i){
+			this.index = i;
+		}
+		public int intValue(){
+			return index;
+		}		
+	}
 	public DownloadTask(String url, String savePath)
 	{
 		this.url = url;
 		this.savePath = savePath;
 		this.createTime = new Date().getTime();
 		this.state = STATE.QUERY_WAITING;
-		this.run = true;
+	}
+	public DownloadTask initTask(){
+		return new 	DownloadTask(this.url,this.savePath);	
 	}
 	public String getURL(){
 		return this.url;
@@ -52,14 +62,6 @@ public class DownloadTask
 	{
 		this.ext = ext;
 	}
-	public void setFilesize(long filesize)
-	{
-		this.filesize = filesize;
-	}
-	public long getFilesize()
-	{
-		return this.filesize;
-	}
 	public long getCreateTime(){
 		return this.createTime;
 	}
@@ -78,12 +80,6 @@ public class DownloadTask
 		}
 		return new File(f);
 	}
-	public long getCurrentSize(){
-		return currentSize;
-	}
-	public void setCurrentSize(long size){
-		this.currentSize = size;
-	}
 	public String getMessage() 
 	{
 		return message;
@@ -91,12 +87,6 @@ public class DownloadTask
 	public void setMessage(String message) 
 	{
 		this.message = message;
-	}
-	public boolean isRun() {
-		return run;
-	}
-	public void setRun(boolean run) {
-		this.run = run;
 	}
 	public long getCurrentSpeed() {
 		return currentSpeed;
@@ -107,5 +97,46 @@ public class DownloadTask
 		}else{
 			this.currentSpeed = 0;
 		}
+	}	
+	@Override
+	public int hashCode() {
+		return this.url.hashCode();
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if(obj != null && obj instanceof DownloadTask &&((DownloadTask)obj).getURL().equals(this.url)){
+			return true;
+		}
+		return false;
+	}
+	public long getRemoteFilesize() {
+		return remoteFilesize;
+	}
+	public void setRemoteFilesize(long remoteFilesize) {
+		this.remoteFilesize = remoteFilesize;
+	}
+	public long getLocalFilesize() {
+		return localFilesize;
+	}
+	public void setLocalFilesize(long localFilesize) {
+		this.localFilesize = localFilesize;
+	}
+	public Future<Void> getFuture() {
+		return future;
+	}
+	public void setFuture(Future<Void> future) {
+		this.future = future;
+	}
+	public void stop(){
+		if(this.future == null){
+			return;
+		}
+		if(this.future.isDone()){
+			return;
+		}
+		if(this.future.isCancelled()){
+			return;
+		}
+		this.future.cancel(true);
 	}
 }

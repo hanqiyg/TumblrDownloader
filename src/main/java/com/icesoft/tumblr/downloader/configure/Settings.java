@@ -3,8 +3,6 @@ package com.icesoft.tumblr.downloader.configure;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.log4j.Logger;
 
 import com.icesoft.tumblr.downloader.configure.Constants.DownloadManagerConfigure;

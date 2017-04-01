@@ -8,41 +8,61 @@ import org.apache.log4j.Logger;
 
 import com.icesoft.tumblr.downloader.panel.interfaces.IUpdatable;
 
-public class UIMonitor extends Thread{
+public class UIMonitor{
 	private static Logger logger = Logger.getLogger(UIMonitor.class);  
-	private boolean on = true;	
-	List<IUpdatable> updatables = Collections.synchronizedList(new ArrayList<IUpdatable>());
-	
-	@Override
-	public void run() 
+	private volatile boolean on = true;	
+	private List<IUpdatable> updatables = Collections.synchronizedList(new ArrayList<IUpdatable>());
+	private static UIMonitor instance = new UIMonitor();
+	private Thread thread;
+	private UIMonitor()
 	{
-		while(on)
-		{	
-			try {
 
-				if(updatables != null && updatables.size() > 0)
-				{					
-					for(IUpdatable up : updatables)
-					{
-						if(up != null)
-						{
-							up.update();
-						}else
-						{
-							logger.debug("UIMonitor:" + "Moniting obj is null.");
-						}
-					}
-				}else
-				{
-					logger.debug("UIMonitor:" + "Moniting list is null or empty.");
-				}
-				Thread.sleep(1000);
-			} catch (InterruptedException e) 
-			{
-				logger.debug("UIMonitor:" + e.getMessage());
-			}
-		}
 	}
+	private Thread newThread()
+	{
+		Thread thread = new Thread(){
+			@Override
+			public void run() 
+			{
+				while(on)
+				{	
+					if(updatables != null && updatables.size() > 0)
+					{					
+						for(IUpdatable up : updatables)
+						{
+							if(up != null)
+							{
+								up.update();
+							}else
+							{
+								logger.debug("UIMonitor:" + "Moniting obj is null.");
+							}
+						}
+					}else
+					{
+						logger.debug("UIMonitor:" + "Moniting list is null or empty.");
+					}
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) 
+					{
+						logger.debug("UIMonitor:" + e.getMessage());
+					}
+				}
+			}
+		};
+		return thread;
+	}
+	public static UIMonitor getInstance(){
+		return instance;
+	}
+	
+	public void turnOn(){
+		this.on = true;
+		thread = newThread();
+		thread.start();		
+	}	
+
 	public void turnOff(){
 		this.on = false;
 	}

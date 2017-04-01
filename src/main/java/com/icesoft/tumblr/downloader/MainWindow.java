@@ -58,8 +58,6 @@ public class MainWindow {
 	private static Logger logger = Logger.getLogger(MainWindow.class);  
 	private JFrame frame;	
 	
-	private UIMonitor monitor;
-	
 	private LikesPanel likesPanel;
 	private SettingsPanel settingsPanel;
 	private DownloadPanel downloadPanel;
@@ -74,17 +72,19 @@ public class MainWindow {
 					window.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 					window.frame.addWindowListener(new WindowAdapter(){
 						public void windowClosing(WindowEvent e){
+							UIMonitor.getInstance().turnOff();
 							QueryManager.getInstance().stopQuery();
-							DownloadManager.getInstance().stopAll();
 							try {
 								HttpClientConnectionManager.getInstance().shutdown();
 							} catch (IOException e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
+							DownloadManager.getInstance().stopAll();
+
 							Rectangle bounds = window.frame.getBounds();
 							Settings.getInstance().setWindowSettings(bounds.x, bounds.y, bounds.width, bounds.height);
-							System.out.println("关闭主窗口退出！");
+							logger.info("exit.");
 							System.exit(0);
 						}
 					}); 
@@ -145,10 +145,10 @@ public class MainWindow {
 		System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
 		System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
 		System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
-		monitor = new UIMonitor();
-		monitor.addUpdatable(likesPanel);
-		monitor.addUpdatable(downloadPanel);
-		monitor.addUpdatable(resourceStatusPanel);
-		monitor.start();		
+
+		UIMonitor.getInstance().addUpdatable(likesPanel);
+		UIMonitor.getInstance().addUpdatable(downloadPanel);
+		UIMonitor.getInstance().addUpdatable(resourceStatusPanel);
+		UIMonitor.getInstance().turnOn();	
 	}
 }

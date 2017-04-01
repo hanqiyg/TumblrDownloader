@@ -6,10 +6,9 @@ import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.log4j.Logger;
 
 public class StringUtils {
-	private static Logger logger = Logger.getLogger(StringUtils.class);  
+	//private static Logger logger = Logger.getLogger(StringUtils.class);  
 	public static String getFilenameFromDisposition(HttpResponse response){
 		Header contentHeader = response.getFirstHeader("Content-Disposition");  
         String filename = null;  
@@ -37,10 +36,10 @@ public class StringUtils {
 		String filename = null;
 		if(getFilenameFromDisposition(response) != null){
 			filename = getFilenameFromDisposition(response);
-			logger.debug("getFilename from disposition as " + filename);
+			//logger.debug("getFilename from disposition as " + filename);
 		}else{
 			filename = getFilenameFromFileUrl(url);
-			logger.debug("getFilename from file url as " + filename);
+			//logger.debug("getFilename from file url as " + filename);
 		}
 		return filename;
 	}

@@ -22,7 +22,7 @@ public class TumblrServices {
 		return instance;
 	}
 	public String testConnect(TumblrToken token){
-		logger.info("Jumblr Service -> testConnect" + "\r\n"
+		logger.debug("Jumblr Service -> testConnect" + "\r\n"
 					+ "      consumer_key:["	+ token.getConsumer_key() 		+ "]" 	+ "\r\n"
 					+ "   consumer_secret:[" 	+ token.getConsumer_secret() 	+ "]"	+ "\r\n"
 					+ "       oauth_token:[" 	+ token.getOauth_token() 		+ "]"  	+ "\r\n"
@@ -35,9 +35,9 @@ public class TumblrServices {
 			User user = client.user();
 			if(user != null){
 				result = "Success User:" + user.getName();
-				logger.info("Jumblr Service -> testConnect: success. [User:" + (user==null?"null":user.getName()) + "]");
+				logger.debug("Jumblr Service -> testConnect: success. [User:" + (user==null?"null":user.getName()) + "]");
 			}else{
-				logger.info("Jumblr Service -> testConnect: success. [User: Null]"); 
+				logger.debug("Jumblr Service -> testConnect: success. [User: Null]"); 
 				result = "Success User:Null";
 			}
 		}catch(Exception e){
@@ -48,7 +48,7 @@ public class TumblrServices {
 	}
 	public boolean connectService(){
 		try{
-			logger.info("Jumblr Service -> connecting.");
+			logger.debug("Jumblr Service -> connecting.");
 				client = new JumblrClient(
 						Settings.getInstance().getToken().getConsumer_key(),
 						Settings.getInstance().getToken().getConsumer_secret()
@@ -68,11 +68,11 @@ public class TumblrServices {
 			connectService();
 		}
 		int count = user.getLikeCount();
-		logger.info("Jumblr Service -> getLikesCount: " + count);
+		logger.debug("Jumblr Service -> getLikesCount: " + count);
 		return count;
 	}
 	public Post getLikeById(int index){
-		logger.info("Jumblr Service -> getLikeById[" + index + "] connecting.");
+		logger.debug("Jumblr Service -> getLikeById[" + index + "] connecting.");
 		if(index < 0){
 			index = 0;
 		}	
@@ -87,7 +87,7 @@ public class TumblrServices {
 		List<Post> p = client.userLikes(options);
 		if(p!= null && p.size()>0){
 			Post post = p.get(0);
-			logger.info("Jumblr Service -> getLikeById[" + index + "]: "+ post.getBlogName() + "[" + post.getId() + "]");
+			logger.debug("Jumblr Service -> getLikeById[" + index + "]: "+ post.getBlogName() + "[" + post.getId() + "]");
 			return post;
 		}else{
 			//System.out.println("null");
@@ -95,7 +95,7 @@ public class TumblrServices {
 		}
 	}
 	public List<Post> getLikeById(int limit,int offset){
-		logger.info("Jumblr Service -> getLikeById[" + offset + "-" + (offset + limit) + "] connecting.");
+		logger.debug("Jumblr Service -> getLikeById[" + offset + "-" + (offset + limit) + "] connecting.");
 		if(offset < 0 || limit <= 0){
 			return null;
 		}	
@@ -110,7 +110,7 @@ public class TumblrServices {
 		List<Post> posts = client.userLikes(options);
 		if(posts!= null && posts.size()>0){
 			int count = posts.size();
-			logger.info("Jumblr Service -> getLikeById[" + offset + "-" + (offset + limit) +  "]: get [" + count + "] Posts.");
+			logger.debug("Jumblr Service -> getLikeById[" + offset + "-" + (offset + limit) +  "]: get [" + count + "] Posts.");
 			return posts;
 		}
 		return null;

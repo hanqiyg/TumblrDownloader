@@ -8,7 +8,7 @@ import com.icesoft.tumblr.downloader.workers.interfaces.IQueryWorker;
 import com.tumblr.jumblr.types.Post;
 
 public class AllLikedQueryWorker implements IQueryWorker{
-	private boolean run = true;
+	private volatile boolean run = true;
 	private int limit = 50;
 	
 	private int count = 0;
