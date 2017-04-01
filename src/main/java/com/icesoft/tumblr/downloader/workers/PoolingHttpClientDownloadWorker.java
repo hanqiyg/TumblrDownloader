@@ -17,6 +17,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 
+import com.icesoft.tumblr.downloader.exceptions.HttpClientExecuteException;
 import com.icesoft.tumblr.downloader.exceptions.TaskInterruptedException;
 import com.icesoft.utils.MineType;
 import com.icesoft.utils.StringUtils;
@@ -28,6 +29,12 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 	private HttpContext context;
 	
 	private DownloadTask task;	
+	
+	private CloseableHttpResponse response = null;
+	private ReadableByteChannel rbc = null;
+	private FileOutputStream fos = null;	
+	private RandomAccessFile file = null;
+	private ByteBuffer source = null,target = null;
 	
 	public PoolingHttpClientDownloadWorker(CloseableHttpClient httpClient,DownloadTask task){
 		logger.info(" create HttpGetVideoWorker instance.");
@@ -68,19 +75,16 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 		}		
 		task.setMessage(msg);
 	}
-	public void init() throws TaskInterruptedException{
+	public void init() throws TaskInterruptedException, HttpClientExecuteException{
 		message("Query begin",DownloadTask.STATE.QUERY_RUNNING);
 		if(get.containsHeader("Range"))
 		{
 			get.removeHeaders("Range");
 		}
-		CloseableHttpResponse response = null;
 		try {
 			response = httpClient.execute(get,context);
 		} catch (IOException e) {
-			message("Query Exception." + e.getMessage(),DownloadTask.STATE.QUERY_EXCEPTION);
-			close(response,null,null);
-			return;
+			throw new HttpClientExecuteException();
 		}
 		if(response.getStatusLine().getStatusCode() == 200)
 		{
@@ -137,12 +141,9 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 			return;
 		}
 	}
-
+	
 	private void download(boolean isFromBeginning) throws TaskInterruptedException{
 		message("Download begin",DownloadTask.STATE.DOWNLOAD_RUNNING);
-		CloseableHttpResponse response = null;
-		ReadableByteChannel rbc = null;
-		FileOutputStream fos = null;
 		if(get.containsHeader("Range"))
 		{
 			get.removeHeaders("Range");
@@ -249,6 +250,33 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 		}
 		close(response,rbc,fos);
 	}
+	private void shutdown() throws IOException{
+		if(response != null)
+		{
+			response.close();
+		}
+		if(rbc != null)
+		{
+			rbc.close();
+		}
+		if(fos != null)
+		{
+			fos.getChannel().force(true);
+			fos.close();
+		}
+		if(file != null)
+		{
+			file.close();
+		}
+		if(source != null)
+		{
+			source = null;
+		}
+		if(target != null)
+		{
+			target = null;
+		}
+	}
 	private void close(	CloseableHttpResponse response,
 						ReadableByteChannel rbc,
 						FileOutputStream fos
@@ -273,10 +301,6 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 		}
 	}
 	private boolean checkTail() throws TaskInterruptedException {
-		RandomAccessFile file = null;
-		CloseableHttpResponse response = null;
-		ReadableByteChannel rbc = null;
-		ByteBuffer source = null,target = null;
 		int tailLength = (int) (task.getRemoteFilesize()<<3);
 		if(tailLength > 1024){
 			tailLength = 1024;
