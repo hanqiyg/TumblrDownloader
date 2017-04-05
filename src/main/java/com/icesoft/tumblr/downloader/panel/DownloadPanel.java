@@ -7,9 +7,12 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.apache.http.pool.PoolStats;
+import org.apache.log4j.Logger;
 
+import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
 import com.icesoft.tumblr.downloader.panel.interfaces.IUpdatable;
+import com.icesoft.tumblr.downloader.service.H2DBService;
 import com.icesoft.tumblr.downloader.tablemodel.DateCellRenderer;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadModel;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadModel.ColName;
@@ -34,6 +37,7 @@ import javax.swing.JButton;
 
 public class DownloadPanel extends JPanel implements IUpdatable{
 	private static final long serialVersionUID = 4111940040655069650L;
+	private static Logger logger = Logger.getLogger(H2DBService.class);  
 	private JTable table;
 	private DownloadModel model;
 	private JLabel lblStats;
@@ -78,6 +82,14 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		});
 		plControl.add(btnAll);
 		
+		JButton btnDownloadAll = new JButton("DownloadAll ");
+		btnAll.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				DownloadManager.getInstance().downloadResumeAllTask();
+			}
+		});
+		plControl.add(btnDownloadAll);
+		
 		GridBagConstraints gbc_plControl = new GridBagConstraints();
 		gbc_plControl.insets = new Insets(5, 5, 5, 5);
 		gbc_plControl.fill = GridBagConstraints.BOTH;
@@ -107,8 +119,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		add(scrollPane, gbc_scrollPane);
 	}
 	public void loadStats(){
-		PoolStats s = HttpClientConnectionManager.getInstance().getStats();
-		
+		PoolStats s = HttpClientConnectionManager.getInstance().getStats();		
 		if(s != null){
 			lblStats.setText("HttpClient Usage:" + s.getLeased() + " / " + s.getMax());
 		}else{
@@ -143,13 +154,19 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 	        	   JPopupMenu menu = getRightMouseMenu(task);
 		           menu.show(table, e.getX(), e.getY());  
 	           } 
-	       }  
+	       } 
 	}
 	private JPopupMenu getRightMouseMenu(DownloadTask task){
 		JPopupMenu rightMouseMenu = new JPopupMenu();
-		rightMouseMenu.add(getOpenFolderMenuItem(task));
-		rightMouseMenu.add(getStopMenuItem(task));
-		return rightMouseMenu;  
+		rightMouseMenu.add(getOpenFolderMenuItem(task));	
+		if(task.getFuture() != null)
+		{
+			rightMouseMenu.add(getStopMenuItem(task));
+		}
+		if(task.getFuture() == null){
+			rightMouseMenu.add(getDownloadMenuItem(task));
+		}
+		return rightMouseMenu; 
 	}
 
 	public JMenuItem getOpenFolderMenuItem(DownloadTask task){
@@ -159,7 +176,14 @@ public class DownloadPanel extends JPanel implements IUpdatable{
             	String folder = task.getFile().getParent();
             	if (Desktop.isDesktopSupported()) {
             	    try {
-						Desktop.getDesktop().open(new File(folder));
+            	    	File parent = new File(folder);
+            	    	if(parent.exists())
+            	    	{
+            	    		Desktop.getDesktop().open(parent);
+            	    	}else
+            	    	{
+            	    		logger.debug("Folder[" + folder +"] does not exist.");
+            	    	}					
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -174,6 +198,15 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		item.addActionListener(new ActionListener() {  
             public void actionPerformed(ActionEvent evt) {  
             	task.stop();
+            }
+        }); 
+        return item;
+	}
+	public JMenuItem getDownloadMenuItem(DownloadTask task){
+		JMenuItem item = new JMenuItem("Download");  
+		item.addActionListener(new ActionListener() {  
+            public void actionPerformed(ActionEvent evt) {  
+            	DownloadManager.getInstance().downloadResumeTask(task);
             }
         }); 
         return item;

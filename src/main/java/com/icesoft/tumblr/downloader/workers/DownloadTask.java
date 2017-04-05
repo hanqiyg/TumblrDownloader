@@ -18,13 +18,16 @@ public class DownloadTask
 	
 	private long 	currentSpeed;
 	
+	private boolean complete;
+	private volatile boolean run = true;
+	
 	private String  message;
 	private Future<Void> future;
 	
 	public enum STATE
 	{
 		QUERY_WAITING(1),QUERY_RUNNING(2),QUERY_COMPLETE(3),QUERY_EXCEPTION(4),
-		DOWNLOAD_WAITING(5),DOWNLOAD_RUNNING(6),DOWNLOAD_PAUSING(7),DOWNLOAD_COMPLETE(8),DOWNLOAD_EXCEPTION(9);
+		DOWNLOAD_WAITING(5),DOWNLOAD_RUNNING(6),DOWNLOAD_PAUSING(7),DOWNLOAD_COMPLETE(8),DOWNLOAD_EXCEPTION(9),PAUSE(10);
 		private int index;
 		private STATE(int i){
 			this.index = i;
@@ -40,9 +43,21 @@ public class DownloadTask
 		this.createTime = new Date().getTime();
 		this.state = STATE.QUERY_WAITING;
 	}
-	public DownloadTask initTask(){
-		return new 	DownloadTask(this.url,this.savePath);	
-	}
+	public DownloadTask(String url,String filename,long filesize,long createTime,boolean iscomplete,String ext,String savePath){
+		this.url = url;
+		this.filename = filename;
+		this.remoteFilesize = filesize;
+		this.createTime = createTime;
+		this.complete = iscomplete;
+		this.ext = ext;
+		this.savePath = savePath;
+		
+		File file = getFile();
+		if(file.exists()){
+			this.localFilesize = file.length();
+		}
+	}	
+
 	public String getURL(){
 		return this.url;
 	}
@@ -74,11 +89,14 @@ public class DownloadTask
 	public File getFile(){
 		String f = null;
 		if(ext != null && !ext.isEmpty()){
-			f = savePath + File.separator + File.separator + filename + "." + ext;
+			f = savePath + File.separator + filename + "." + ext;
 		}else{
-			f = savePath + File.separator + File.separator + filename;
+			f = savePath + File.separator + filename;
 		}
 		return new File(f);
+	}
+	public String getFilename(){
+		return this.filename;
 	}
 	public String getMessage() 
 	{
@@ -128,15 +146,24 @@ public class DownloadTask
 		this.future = future;
 	}
 	public void stop(){
-		if(this.future == null){
-			return;
-		}
-		if(this.future.isDone()){
-			return;
-		}
-		if(this.future.isCancelled()){
-			return;
-		}
-		this.future.cancel(true);
+		setRun(false);
+	}
+	public boolean isComplete() {
+		return complete;
+	}
+	public void setComplete(boolean complete) {
+		this.complete = complete;
+	}
+	public String getExt() {
+		return this.ext;
+	}
+	public String getSavePath(){
+		return this.savePath;
+	}
+	public boolean isRun() {
+		return run;
+	}
+	public void setRun(boolean run) {
+		this.run = run;
 	}
 }

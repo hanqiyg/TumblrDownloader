@@ -8,6 +8,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Properties;
 
 import javax.swing.JFrame;
@@ -25,6 +26,7 @@ import com.icesoft.tumblr.downloader.panel.DownloadPanel;
 import com.icesoft.tumblr.downloader.panel.LikesPanel;
 import com.icesoft.tumblr.downloader.panel.ResourceStatusPanel;
 import com.icesoft.tumblr.downloader.panel.SettingsPanel;
+import com.icesoft.tumblr.downloader.service.H2DBService;
 
 
 public class MainWindow {
@@ -81,7 +83,12 @@ public class MainWindow {
 								e1.printStackTrace();
 							}
 							DownloadManager.getInstance().stopAll();
-
+							try {
+								H2DBService.getInstance().close();
+							} catch (SQLException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
 							Rectangle bounds = window.frame.getBounds();
 							Settings.getInstance().setWindowSettings(bounds.x, bounds.y, bounds.width, bounds.height);
 							logger.info("exit.");
@@ -141,6 +148,7 @@ public class MainWindow {
 	    System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
 	    System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire", "debug");
 	    System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");*/
+		
 		//httpclient Enable just context logging
 		System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
 		System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");

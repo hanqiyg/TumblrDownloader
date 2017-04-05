@@ -22,6 +22,7 @@ import com.icesoft.tumblr.downloader.monitor.IdleConnectionMonitor;
 
 public class HttpClientConnectionManager 
 {
+	private static final int TIMEOUT = 10 * 1000;
 	//private static Logger logger = Logger.getLogger(HttpClientConnectionManager.class);  
 	private PoolingHttpClientConnectionManager connManager;
 	private IdleConnectionMonitor monitor;
@@ -49,13 +50,13 @@ public class HttpClientConnectionManager
 		                } catch(NumberFormatException ignore) {}
 		            }
 		        }
-		        return 5 * 1000;
+		        return 50 * 1000;
 		    }
 		};
 	   RequestConfig requestConfig = RequestConfig.custom()
-	            .setConnectionRequestTimeout(5 * 1000)
-	            .setSocketTimeout(5 * 1000)
-	            .setConnectionRequestTimeout(5 * 1000)
+	            .setConnectionRequestTimeout(TIMEOUT)
+	            .setSocketTimeout(TIMEOUT)
+	            .setConnectionRequestTimeout(TIMEOUT)
 	            .build();
 		HttpHost proxy = new HttpHost(
 				Settings.getInstance().getProxySettings().getHost(),

@@ -117,8 +117,8 @@ public class LikesPanel extends JPanel implements IUpdatable{
 								String saveLocation = Settings.getInstance().getSaveLocation();
 								String id = TumblrServices.getInstance().getBlogId(v);
 								String name = TumblrServices.getInstance().getBlogName(v);
-								DownloadManager.getInstance().addTask(new DownloadTask(url, saveLocation + File.separator + name + File.separator + id));
-								DownloadManager.getInstance().addTask(new DownloadTask(poster, saveLocation + File.separator + name + File.separator + id));
+								DownloadManager.getInstance().addNewTask(new DownloadTask(url, saveLocation + File.separator + name + File.separator + id));
+								DownloadManager.getInstance().addNewTask(new DownloadTask(poster, saveLocation + File.separator + name + File.separator + id));
 							} catch (ParserException | IOException e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
@@ -133,7 +133,7 @@ public class LikesPanel extends JPanel implements IUpdatable{
 							String saveLocation = Settings.getInstance().getSaveLocation();
 							String id = TumblrServices.getInstance().getBlogId(photoPost);
 							String name = TumblrServices.getInstance().getBlogName(photoPost);
-							DownloadManager.getInstance().addTask(new DownloadTask(url, saveLocation + File.separator + name + File.separator + id));
+							DownloadManager.getInstance().addNewTask(new DownloadTask(url, saveLocation + File.separator + name + File.separator + id));
 						}
 					}
 				}

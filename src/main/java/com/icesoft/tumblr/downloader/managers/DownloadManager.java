@@ -12,7 +12,9 @@ import org.apache.log4j.Logger;
 
 import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
+import com.icesoft.tumblr.downloader.service.H2DBService;
 import com.icesoft.tumblr.downloader.workers.DownloadTask;
+import com.icesoft.tumblr.downloader.workers.DownloadTask.STATE;
 import com.icesoft.tumblr.downloader.workers.PoolingHttpClientDownloadWorker;
 
 public class DownloadManager {
@@ -23,6 +25,7 @@ public class DownloadManager {
 	private List<DownloadTask> tasks = Collections.synchronizedList(new ArrayList<DownloadTask>());
 	
 	private DownloadManager(){
+		loadTasks();
 	}
 	public static DownloadManager getInstance(){
 		return instance;
@@ -59,13 +62,48 @@ public class DownloadManager {
 		task = null;
 	}
 	
-	public void saveTask(DownloadTask task){
+	public void saveTask(DownloadTask task)
+	{
+		H2DBService.getInstance().updateTask(task);
 	}
-	public void loadTasks(){
+	public void loadTasks()
+	{
+		List<DownloadTask> loads = H2DBService.getInstance().loadTask();
+		for(DownloadTask task : loads){
+			if(task.isComplete())
+			{
+				task.setState(STATE.DOWNLOAD_COMPLETE);
+			}else
+			{
+				task.setState(STATE.QUERY_WAITING);
+			}
+			tasks.add(task);
+		}
 	}
-	public void addTask(DownloadTask task){
-		if(isAdded(task)){
+	public void addNewTask(DownloadTask task){
+		if(H2DBService.getInstance().isURLExist(task.getURL())){
 			logger.info("Task:[" + task.getURL() +"] is already added.");
+			return;
+		}
+		H2DBService.getInstance().initTask(task.getURL());
+		if(task.getState().equals(DownloadTask.STATE.QUERY_WAITING)){
+			PoolingHttpClientDownloadWorker worker = new PoolingHttpClientDownloadWorker
+					(
+					HttpClientConnectionManager.getInstance().getHttpClient(),
+					task
+					);
+			Future<Void> f = pool.submit(worker);
+			task.setFuture(f);
+			tasks.add(task);
+		}
+	}
+	public void downloadResumeTask(DownloadTask task){
+		if(!tasks.contains(task)){
+			logger.info("Task[" + task.getURL() +"] is not in task list.");
+			return;
+		}
+		if(task.getFuture() != null){
+			logger.info("Task[" + task.getURL() +"] is already running.");
 			return;
 		}
 		if(task.getState().equals(DownloadTask.STATE.QUERY_WAITING)){
@@ -74,16 +112,15 @@ public class DownloadManager {
 					HttpClientConnectionManager.getInstance().getHttpClient(),
 					task
 					);
-			
 			Future<Void> f = pool.submit(worker);
 			task.setFuture(f);
-			tasks.add(task);
 		}
 	}
-	public boolean isAdded(DownloadTask task){
-		if(tasks.contains(task)){
-			return true;
+	public void downloadResumeAllTask(){
+		Iterator<DownloadTask> it = tasks.iterator();
+		while(it.hasNext()){
+			DownloadTask task = it.next();
+			downloadResumeTask(task);
 		}
-		return false;
 	}
 }

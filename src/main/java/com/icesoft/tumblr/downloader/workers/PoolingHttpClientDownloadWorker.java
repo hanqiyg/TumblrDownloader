@@ -17,8 +17,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 
-import com.icesoft.tumblr.downloader.exceptions.HttpClientQueryException;
-import com.icesoft.tumblr.downloader.exceptions.TaskInterruptedException;
 import com.icesoft.utils.MineType;
 import com.icesoft.utils.StringUtils;
 
@@ -40,9 +38,10 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 		logger.info(" create HttpGetVideoWorker instance.");
 		this.httpClient = httpClient;
 		this.task = task;
-		this.get = new HttpGet(task.getURL());
 	}
-	
+	public DownloadTask getTask(){
+		return this.task;
+	}
 	@Override
 	public Void call() throws Exception
 	{	
@@ -75,7 +74,8 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 		}		
 		task.setMessage(msg);
 	}
-	public void init() throws TaskInterruptedException, HttpClientQueryException{
+	public void init(){
+		this.get = new HttpGet(task.getURL());
 		message("Query begin",DownloadTask.STATE.QUERY_RUNNING);
 		if(get.containsHeader("Range"))
 		{
@@ -84,7 +84,9 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 		try {
 			response = httpClient.execute(get,context);
 		} catch (IOException e) {
-			throw new HttpClientQueryException();
+			message("Query connection fail.",DownloadTask.STATE.QUERY_EXCEPTION);
+			shutdown();
+			return;
 		}
 		if(response.getStatusLine().getStatusCode() == 200)
 		{
@@ -92,22 +94,23 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 			task.setFilename(StringUtils.getFilename(response, task.getURL()));
 			task.setExt(MineType.getInstance().getExtensionFromMineType(response.getEntity().getContentType().getValue()));	
 			task.setLocalFilesize(task.getFile().length());
-			
+			shutdown();
 			if(task.getRemoteFilesize() < task.getLocalFilesize()){
 				message("Query Exception.[File size bigger than response context size]",DownloadTask.STATE.QUERY_EXCEPTION);
-				close(response,null,null);
+				shutdown();
 				return;
 			}
 			if(task.getRemoteFilesize() == task.getLocalFilesize()){
 				if(checkTail())
 				{
 					message("Query complete.[File download complete.]",DownloadTask.STATE.DOWNLOAD_COMPLETE);
-					close(response,null,null);
+					task.setComplete(true);
+					shutdown();
 					return;
 				}else
 				{
 					message("Query Exception.[File tail not match.]",DownloadTask.STATE.QUERY_EXCEPTION);
-					close(response,null,null);
+					shutdown();
 					return;
 				}		
 			}
@@ -117,32 +120,31 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 				{
 					if(checkTail())
 					{
-						close(response,null,null);
 						message("Query success.[File tail match, continue to download.]",DownloadTask.STATE.QUERY_COMPLETE);
 						download(false);
 						return;
 					}else
 					{
-						close(response,null,null);
 						message("Query Exception.[File tail not match.]",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
+						shutdown();
 						return;
 					}
 				}else
 				{
-					close(response,null,null);
 					message("Query success.[download from begining.]",DownloadTask.STATE.QUERY_COMPLETE);
 					download(true);
+					shutdown();
 					return;
 				}
 			}
 		}else{
-			close(response,null,null);
 			message("Query Exception. [Status code is not 200]" + response.getStatusLine().getStatusCode(),DownloadTask.STATE.QUERY_EXCEPTION);
+			shutdown();
 			return;
 		}
 	}
 	
-	private void download(boolean isFromBeginning) throws TaskInterruptedException{
+	private void download(boolean isFromBeginning){
 		message("Download begin",DownloadTask.STATE.DOWNLOAD_RUNNING);
 		if(get.containsHeader("Range"))
 		{
@@ -158,7 +160,7 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 			if(!createDirectory(task.getFile()))
 			{
 				message("Download Exception. [ create file fail. ]",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
-				close(response,rbc,fos);	
+				shutdown();
 				return;
 			}
 		}
@@ -167,29 +169,29 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 			int code = response.getStatusLine().getStatusCode();
 			if(code != 200 && code != 206)
 			{
-				close(response,null,null);
 				message("Download Exception. [Status code is not 200 or 206]" + response.getStatusLine().getStatusCode(),DownloadTask.STATE.DOWNLOAD_EXCEPTION);
+				shutdown();
 				return;
 			}
 		} catch (ClientProtocolException e) {
 			message("Download Exception. [" + e.getMessage() + "]",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
-			close(response,rbc,fos);	
+			shutdown();
 			return;
 		} catch (IOException e) {
 			message("Download Exception. [" + e.getMessage() + "]",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
-			close(response,rbc,fos);	
+			shutdown();
 			return;
 		}
 		try {
 			rbc = Channels.newChannel(response.getEntity().getContent());
 		} catch (UnsupportedOperationException e) {
 			message("Download Exception. [" + e.getMessage() + "]",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
-			close(response,rbc,fos);	
+			shutdown();
 			return;
 		} catch (IOException e) 
 		{
 			message("Download Exception. [" + e.getMessage() + "]",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
-			close(response,rbc,fos);	
+			shutdown();
 			return;
 		}
 		try {
@@ -197,7 +199,7 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 		} catch (FileNotFoundException e) 
 		{		
 			message("Download Exception. [" + e.getMessage() + "]",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
-			close(response,rbc,fos);	
+			shutdown();
 			return;
 		}
 		long remainingSize = response.getEntity().getContentLength();
@@ -209,8 +211,10 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 		{
 			while (remainingSize > 0) 
 			{
-				if(Thread.currentThread().isInterrupted()){
-					throw new TaskInterruptedException();
+				if(! task.isRun()){
+					message("Download task is canceled.",DownloadTask.STATE.PAUSE);
+					shutdown();
+					break;
 				}
 				long begin = System.currentTimeMillis();
 				long delta;
@@ -229,45 +233,70 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 			}
 		} catch (IOException e) {
 			message("Download Exception. [" + e.getMessage() + "]",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
-			close(response,rbc,fos);
+			shutdown();
 			return;
 		}
 		
 		if(task.getFile().length() == task.getRemoteFilesize()){
 			message("Download Complete.",DownloadTask.STATE.DOWNLOAD_COMPLETE);
-			close(response,rbc,fos);
+			task.setComplete(true);
+			shutdown();
 			return;
 		}
 		if(task.getFile().length() > task.getRemoteFilesize()){
 			message("Download Exception. local file size is bigger than remote.",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
-			close(response,rbc,fos);
+			shutdown();
 			return;
 		}
 		if(task.getFile().length() < task.getRemoteFilesize()){
 			message("Download Exception. local file size is smaller than remote.",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
-			close(response,rbc,fos);
+			shutdown();
 			return;
 		}
-		close(response,rbc,fos);
 	}
-	private void shutdown() throws IOException{
-		if(response != null)
+	private void shutdown(){
+		if(file != null)
 		{
-			response.close();
-		}
-		if(rbc != null)
-		{
-			rbc.close();
+			try {
+				file.close();
+			} catch (IOException e) {
+				message("close file fail.",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
+			}
 		}
 		if(fos != null)
 		{
-			fos.getChannel().force(true);
-			fos.close();
+			try {
+				fos.getChannel().force(true);
+			} catch (IOException e1) {
+				message("force flush exception.",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
+			}
+			try {
+				fos.close();
+			} catch (IOException e) {
+				message("close fos fail.",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
+			}			
 		}
-		if(file != null)
+		if(rbc != null)
 		{
-			file.close();
+			try {
+				rbc.close();
+			} catch (IOException e) {
+				message("close rbc fail.",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
+			}
 		}
+		if(response != null)
+		{
+			try {
+				response.close();
+			} catch (IOException e) {
+				message("close response fail.",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
+			}
+		}
+		if(get != null){
+			get.releaseConnection();
+		}
+
+		
 		if(source != null)
 		{
 			source = null;
@@ -276,36 +305,12 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 		{
 			target = null;
 		}
+		task.setFuture(null);
 	}
-	private void close(	CloseableHttpResponse response,
-						ReadableByteChannel rbc,
-						FileOutputStream fos
-						)
-	{	try 
-		{		
-			if(fos != null)
-			{
-				fos.getChannel().force(true);
-				fos.close();
-			}
-			if(rbc != null)
-			{
-			rbc.close();
-			}
-			if(response != null)
-			{
-				response.close();
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	private boolean checkTail() throws TaskInterruptedException {
+	private boolean checkTail(){
 		int tailLength = (int) (task.getRemoteFilesize()<<3);
 		if(tailLength > 1024){
 			tailLength = 1024;
-		}else if(tailLength < 100){
-			tailLength = 100;
 		}
 		try
 		{	
@@ -319,8 +324,10 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 			source = ByteBuffer.allocate(tailLength);
 			int sourceBuffered = 0;
 			while(sourceBuffered < tailLength){
-				if(Thread.currentThread().isInterrupted()){
-					throw new TaskInterruptedException();
+				if(! task.isRun()){
+					message("check tail is canceled.",DownloadTask.STATE.PAUSE);
+					shutdown();
+					return false;
 				}
 				int count = inChannel.read(source);
 				sourceBuffered += count;
@@ -331,14 +338,16 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 			if(code != 200 && code != 206)
 			{
 				message("Tail check Exception. [Status code is not 200 or 206]" + response.getStatusLine().getStatusCode(),DownloadTask.STATE.QUERY_EXCEPTION);
-				TailCost(source, target, file, response, rbc);
+				shutdown();
 				return false;
 			}
 			rbc = Channels.newChannel(response.getEntity().getContent());
 			int targetBuffered = 0;
 			while (targetBuffered < tailLength) {
-				if(Thread.currentThread().isInterrupted()){
-					throw new TaskInterruptedException();
+				if(! task.isRun()){
+					message("check tail is canceled.",DownloadTask.STATE.QUERY_EXCEPTION);
+					shutdown();
+					return false;
 				}
 				int delta = rbc.read(target);
 				targetBuffered +=delta;
@@ -348,36 +357,11 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 			}else{
 				return false;
 			}
-		}catch(IOException e){
-			
+		}catch(IOException e){			
 			message("Tail Check Exception. [" + e.getMessage() + "]",DownloadTask.STATE.QUERY_EXCEPTION);
+			shutdown();
 			return false;
-		}finally{
-			TailCost(source, target, file, response, rbc);
 		}
-	}
-	private void TailCost(ByteBuffer source,ByteBuffer target,RandomAccessFile file,
-	CloseableHttpResponse response,
-	ReadableByteChannel rbc){
-		source = null;
-		target = null;
-		try {
-			if(response != null)
-			{	
-				response.close();	
-				response = null;
-			}
-			if(rbc != null)
-			{
-				rbc.close();
-				rbc = null;
-			}
-			if(file != null){
-				file.close();
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}	
 	}
 	
 	private boolean createDirectory(File file) {
