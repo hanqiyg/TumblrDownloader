@@ -166,4 +166,23 @@ public class DownloadTask
 	public void setRun(boolean run) {
 		this.run = run;
 	}
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("URL:" + url + "\r");
+		sb.append("savePath:" + savePath + "\r");
+		sb.append("state:" + state + "\r");
+		sb.append("filename:" + filename + "\r");
+		sb.append("ext:" + ext + "\r");
+		sb.append("remoteFilesize:" + remoteFilesize + "\r");
+		sb.append("localFilesize:" + localFilesize + "\r");
+		sb.append("createTime:" + createTime + "\r");
+		sb.append("totalTime:" + totalTime + "\r");
+		sb.append("currentSpeed:" + currentSpeed + "\r");
+		sb.append("complete:" + complete + "\r");
+		sb.append("run:" + run + "\r");
+		sb.append("message:" + message + "\r");
+		sb.append("future:" + future + "\r");
+		return sb.toString();
+	}	
 }

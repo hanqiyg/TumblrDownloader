@@ -16,6 +16,7 @@ import com.icesoft.tumblr.downloader.service.H2DBService;
 import com.icesoft.tumblr.downloader.workers.DownloadTask;
 import com.icesoft.tumblr.downloader.workers.DownloadTask.STATE;
 import com.icesoft.tumblr.downloader.workers.PoolingHttpClientDownloadWorker;
+import com.icesoft.tumblr.downloader.workers.PoolingHttpGetDownloadWorker;
 
 public class DownloadManager {
 	private static Logger logger = Logger.getLogger(DownloadManager.class);  
@@ -87,11 +88,7 @@ public class DownloadManager {
 		}
 		H2DBService.getInstance().initTask(task.getURL());
 		if(task.getState().equals(DownloadTask.STATE.QUERY_WAITING)){
-			PoolingHttpClientDownloadWorker worker = new PoolingHttpClientDownloadWorker
-					(
-					HttpClientConnectionManager.getInstance().getHttpClient(),
-					task
-					);
+			PoolingHttpGetDownloadWorker worker = new PoolingHttpGetDownloadWorker(task);
 			Future<Void> f = pool.submit(worker);
 			task.setFuture(f);
 			tasks.add(task);
@@ -107,11 +104,7 @@ public class DownloadManager {
 			return;
 		}
 		if(task.getState().equals(DownloadTask.STATE.QUERY_WAITING)){
-			PoolingHttpClientDownloadWorker worker = new PoolingHttpClientDownloadWorker
-					(
-					HttpClientConnectionManager.getInstance().getHttpClient(),
-					task
-					);
+			PoolingHttpGetDownloadWorker worker = new PoolingHttpGetDownloadWorker(task);
 			Future<Void> f = pool.submit(worker);
 			task.setFuture(f);
 		}

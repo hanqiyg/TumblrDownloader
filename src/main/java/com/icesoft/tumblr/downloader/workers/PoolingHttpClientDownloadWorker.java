@@ -10,11 +10,14 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.util.concurrent.Callable;
+
+import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
 import com.icesoft.utils.MineType;
@@ -74,8 +77,9 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 		}		
 		task.setMessage(msg);
 	}
-	public void init(){
+	public void init() throws IOException{
 		this.get = new HttpGet(task.getURL());
+		HttpEntity entity;
 		message("Query begin",DownloadTask.STATE.QUERY_RUNNING);
 		if(get.containsHeader("Range"))
 		{
@@ -83,18 +87,24 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 		}
 		try {
 			response = httpClient.execute(get,context);
+			entity = response.getEntity();
 		} catch (IOException e) {
 			message("Query connection fail.",DownloadTask.STATE.QUERY_EXCEPTION);
-			shutdown();
 			return;
 		}
 		if(response.getStatusLine().getStatusCode() == 200)
-		{
-			task.setRemoteFilesize(response.getEntity().getContentLength());
+		{			
+			task.setRemoteFilesize(entity.getContentLength());
 			task.setFilename(StringUtils.getFilename(response, task.getURL()));
-			task.setExt(MineType.getInstance().getExtensionFromMineType(response.getEntity().getContentType().getValue()));	
+			task.setExt(MineType.getInstance().getExtensionFromMineType(entity.getContentType().getValue()));	
 			task.setLocalFilesize(task.getFile().length());
-			shutdown();
+			try {
+				EntityUtils.consume(entity);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}finally{
+				response.close();
+			}			
 			if(task.getRemoteFilesize() < task.getLocalFilesize()){
 				message("Query Exception.[File size bigger than response context size]",DownloadTask.STATE.QUERY_EXCEPTION);
 				shutdown();
@@ -112,7 +122,7 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 					message("Query Exception.[File tail not match.]",DownloadTask.STATE.QUERY_EXCEPTION);
 					shutdown();
 					return;
-				}		
+				}
 			}
 			if(task.getRemoteFilesize() > task.getLocalFilesize())
 			{
@@ -121,31 +131,28 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 					if(checkTail())
 					{
 						message("Query success.[File tail match, continue to download.]",DownloadTask.STATE.QUERY_COMPLETE);
-						download(false);
 						return;
 					}else
 					{
 						message("Query Exception.[File tail not match.]",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
-						shutdown();
 						return;
 					}
 				}else
 				{
 					message("Query success.[download from begining.]",DownloadTask.STATE.QUERY_COMPLETE);
 					download(true);
-					shutdown();
 					return;
 				}
 			}
 		}else{
 			message("Query Exception. [Status code is not 200]" + response.getStatusLine().getStatusCode(),DownloadTask.STATE.QUERY_EXCEPTION);
-			shutdown();
 			return;
 		}
 	}
 	
 	private void download(boolean isFromBeginning){
 		message("Download begin",DownloadTask.STATE.DOWNLOAD_RUNNING);
+		HttpEntity entity = null;
 		if(get.containsHeader("Range"))
 		{
 			get.removeHeaders("Range");
@@ -160,17 +167,16 @@ public class PoolingHttpClientDownloadWorker implements Callable<Void>{
 			if(!createDirectory(task.getFile()))
 			{
 				message("Download Exception. [ create file fail. ]",DownloadTask.STATE.DOWNLOAD_EXCEPTION);
-				shutdown();
 				return;
 			}
 		}
 		try {
 			response = httpClient.execute(get,context);
+			entity = response.getEntity();
 			int code = response.getStatusLine().getStatusCode();
 			if(code != 200 && code != 206)
 			{
 				message("Download Exception. [Status code is not 200 or 206]" + response.getStatusLine().getStatusCode(),DownloadTask.STATE.DOWNLOAD_EXCEPTION);
-				shutdown();
 				return;
 			}
 		} catch (ClientProtocolException e) {
