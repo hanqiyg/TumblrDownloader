@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 
 import com.icesoft.tumblr.downloader.workers.DownloadTask;
 import com.icesoft.tumblr.downloader.workers.DownloadTask.STATE;
+import com.icesoft.tumblr.state.interfaces.IContext;
 
 public class H2DBService {	
 	private static Logger logger = Logger.getLogger(H2DBService.class);  
@@ -126,14 +127,14 @@ public class H2DBService {
 		return isExist;
 	}
 	
-	public void updateTask(DownloadTask task)
+	public void updateTask(IContext context)
 	{
-		String url = task.getURL();
-		String filename = task.getFilename();
-		String ext  = task.getExt();
-		long filesize = task.getRemoteFilesize();
-		String savepath = task.getSavePath();
-		boolean isComplete = task.getState().equals(STATE.DOWNLOAD_COMPLETE);
+		String url = context.getURL();
+		String filename = context.getFilename();
+		String ext  = context.getExt();
+		long filesize = context.getRemoteFilesize();
+		String savepath = context.getSavePath();
+		boolean isComplete = context.getState().equals(STATE.DOWNLOAD_COMPLETE);
 		if(url != null && !url.trim().equals("")){
 			Statement stmt;
 			try {

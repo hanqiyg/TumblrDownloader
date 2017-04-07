@@ -9,6 +9,7 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.Properties;
 
 import javax.swing.JFrame;
@@ -74,21 +75,27 @@ public class MainWindow {
 					window.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 					window.frame.addWindowListener(new WindowAdapter(){
 						public void windowClosing(WindowEvent e){
+							logger.debug("Shutdown:" + "UIMonitor" + new Date().toString());
 							UIMonitor.getInstance().turnOff();
-							QueryManager.getInstance().stopQuery();
+							logger.debug("Shutdown:" + "QueryManager" + new Date().toString());
+							QueryManager.getInstance().stopQuery();	
+							logger.debug("Shutdown:" + "DownloadManager" + new Date().toString());
+							DownloadManager.getInstance().stopAll();
+							logger.debug("Shutdown:" + "HttpClientConnectionManager" + new Date().toString());
 							try {
 								HttpClientConnectionManager.getInstance().shutdown();
 							} catch (IOException e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
-							DownloadManager.getInstance().stopAll();
+							logger.debug("Shutdown:" + "H2DBService" + new Date().toString());
 							try {
 								H2DBService.getInstance().close();
 							} catch (SQLException e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
+							logger.debug("saveSettings:" + "setWindowSettings" + new Date().toString());
 							Rectangle bounds = window.frame.getBounds();
 							Settings.getInstance().setWindowSettings(bounds.x, bounds.y, bounds.width, bounds.height);
 							logger.info("exit.");

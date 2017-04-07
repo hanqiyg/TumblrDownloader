@@ -30,6 +30,8 @@ import com.icesoft.tumblr.downloader.tablemodel.LikesPostModel;
 import com.icesoft.tumblr.downloader.workers.AllLikedQueryWorker;
 import com.icesoft.tumblr.downloader.workers.DownloadTask;
 import com.icesoft.tumblr.model.VideoInfo;
+import com.icesoft.tumblr.state.DownloadContext;
+import com.icesoft.tumblr.state.DownloadState;
 import com.tumblr.jumblr.types.Photo;
 import com.tumblr.jumblr.types.PhotoPost;
 import com.tumblr.jumblr.types.Post;
@@ -117,8 +119,10 @@ public class LikesPanel extends JPanel implements IUpdatable{
 								String saveLocation = Settings.getInstance().getSaveLocation();
 								String id = TumblrServices.getInstance().getBlogId(v);
 								String name = TumblrServices.getInstance().getBlogName(v);
-								DownloadManager.getInstance().addNewTask(new DownloadTask(url, saveLocation + File.separator + name + File.separator + id));
-								DownloadManager.getInstance().addNewTask(new DownloadTask(poster, saveLocation + File.separator + name + File.separator + id));
+								DownloadManager.getInstance().addNewTask(new DownloadContext(url,DownloadState.CREATE,saveLocation + File.separator + name + File.separator + id));
+								DownloadManager.getInstance().addNewTask(new DownloadContext(poster,DownloadState.CREATE,saveLocation + File.separator + name + File.separator + id));
+								//DownloadManager.getInstance().addNewTask(new DownloadTask(url, saveLocation + File.separator + name + File.separator + id));
+								//DownloadManager.getInstance().addNewTask(new DownloadTask(poster, saveLocation + File.separator + name + File.separator + id));
 							} catch (ParserException | IOException e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
@@ -133,7 +137,7 @@ public class LikesPanel extends JPanel implements IUpdatable{
 							String saveLocation = Settings.getInstance().getSaveLocation();
 							String id = TumblrServices.getInstance().getBlogId(photoPost);
 							String name = TumblrServices.getInstance().getBlogName(photoPost);
-							DownloadManager.getInstance().addNewTask(new DownloadTask(url, saveLocation + File.separator + name + File.separator + id));
+							DownloadManager.getInstance().addNewTask(new DownloadContext(url,DownloadState.CREATE,saveLocation + File.separator + name + File.separator + id));
 						}
 					}
 				}

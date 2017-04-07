@@ -1,73 +1,87 @@
 package com.icesoft.tumblr.downloader.managers;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
-import com.icesoft.tumblr.downloader.configure.Settings;
-import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
 import com.icesoft.tumblr.downloader.service.H2DBService;
-import com.icesoft.tumblr.downloader.workers.DownloadTask;
-import com.icesoft.tumblr.downloader.workers.DownloadTask.STATE;
-import com.icesoft.tumblr.downloader.workers.PoolingHttpClientDownloadWorker;
-import com.icesoft.tumblr.downloader.workers.PoolingHttpGetDownloadWorker;
+import com.icesoft.tumblr.executors.PriorityThreadPoolExecutor;
+import com.icesoft.tumblr.handlers.RejectedExecutionHandlerImpl;
+import com.icesoft.tumblr.state.ContextExecutor;
+import com.icesoft.tumblr.state.DownloadContext;
+import com.icesoft.tumblr.state.interfaces.IContext;
 
 public class DownloadManager {
 	private static Logger logger = Logger.getLogger(DownloadManager.class);  
 	private static DownloadManager instance = new DownloadManager();
-	private ExecutorService pool = Executors.newFixedThreadPool(Settings.getInstance().getWorkerCount());	
 	
-	private List<DownloadTask> tasks = Collections.synchronizedList(new ArrayList<DownloadTask>());
-	
+	final BlockingQueue<Runnable> queue = new PriorityBlockingQueue<>();
+	private ThreadFactory threadFactory = Executors.defaultThreadFactory();
+	private RejectedExecutionHandlerImpl rejecter = new RejectedExecutionHandlerImpl();
+	ThreadPoolExecutor pool = new PriorityThreadPoolExecutor(
+			4, 6, 10, TimeUnit.SECONDS, queue, threadFactory, rejecter);
+	private List<IContext> contexts = Collections.synchronizedList(new ArrayList<IContext>());
 	private DownloadManager(){
-		loadTasks();
+		//loadTasks();
 	}
 	public static DownloadManager getInstance(){
 		return instance;
 	}
-	public List<DownloadTask> getTasks(){
-		return tasks;
-	}
 	public void stopAll(){
 		pool.shutdown();
-		Iterator<DownloadTask> it = tasks.iterator();
+		pool.getQueue().clear();
+		Iterator<IContext> it = contexts.iterator();
 		while(it.hasNext()){
-			DownloadTask task = it.next();
+			IContext context = it.next();
 			it.remove();
-			task.stop();
-			saveTask(task);
+			context.setRun(false);
+			//saveTask(context);
+		}
+		try 
+		{
+			 System.err.println("waiting to termination in 60 s");
+		     // Wait a while for existing tasks to terminate
+			if (!pool.awaitTermination(60, TimeUnit.SECONDS))
+		   	{
+		      pool.shutdownNow(); // Cancel currently executing tasks
+		       // Wait a while for tasks to respond to being cancelled
+		      if (!pool.awaitTermination(60, TimeUnit.SECONDS))
+		           System.err.println("Pool did not terminate");
+		   	}
+		} catch (InterruptedException ie) 
+		{
+		     // (Re-)Cancel if current thread also interrupted
+		     pool.shutdownNow();
+		     // Preserve interrupt status
+		     Thread.currentThread().interrupt();
 		}
 	}
-	public void removeTask(DownloadTask task,boolean deleteFile,boolean saveTask){
-		if(tasks.contains(task)){
-			tasks.remove(task);
-			Future<Void> f = task.getFuture();
-			if(f != null){
-				f.cancel(true);
-			}
-		}		
-		if(deleteFile){
-			if(task.getFile().exists()){
-				task.getFile().delete();
-			}
-		}
-		if(saveTask){
-			saveTask(task);
-		}
-		task = null;
+	public ThreadPoolExecutor getPool(){
+		return pool;
 	}
+/*	public ThreadInfo[] getThreadsInfo(){
+		ThreadMXBean mxBean = ManagementFactory.getThreadMXBean();
+		long[] threadIds = mxBean.getAllThreadIds();
+		return mxBean.getThreadInfo(threadIds);
+	}*/
 	
-	public void saveTask(DownloadTask task)
+	public void saveTask(IContext context)
 	{
-		H2DBService.getInstance().updateTask(task);
+		H2DBService.getInstance().updateTask(context);
 	}
-	public void loadTasks()
+/*	public void loadTasks()
 	{
 		List<DownloadTask> loads = H2DBService.getInstance().loadTask();
 		for(DownloadTask task : loads){
@@ -80,40 +94,34 @@ public class DownloadManager {
 			}
 			tasks.add(task);
 		}
-	}
-	public void addNewTask(DownloadTask task){
-		if(H2DBService.getInstance().isURLExist(task.getURL())){
-			logger.info("Task:[" + task.getURL() +"] is already added.");
+	}*/
+
+	public void downloadResumeTask(IContext context){
+		if(!contexts.contains(context)){
+			logger.info("Task[" + context.getURL() +"] is not in task list.");
 			return;
 		}
-		H2DBService.getInstance().initTask(task.getURL());
-		if(task.getState().equals(DownloadTask.STATE.QUERY_WAITING)){
-			PoolingHttpGetDownloadWorker worker = new PoolingHttpGetDownloadWorker(task);
-			Future<Void> f = pool.submit(worker);
-			task.setFuture(f);
-			tasks.add(task);
-		}
-	}
-	public void downloadResumeTask(DownloadTask task){
-		if(!tasks.contains(task)){
-			logger.info("Task[" + task.getURL() +"] is not in task list.");
+		if(context.isRun()){
+			logger.info("Task[" + context.getURL() +"] is already running.");
 			return;
 		}
-		if(task.getFuture() != null){
-			logger.info("Task[" + task.getURL() +"] is already running.");
-			return;
-		}
-		if(task.getState().equals(DownloadTask.STATE.QUERY_WAITING)){
-			PoolingHttpGetDownloadWorker worker = new PoolingHttpGetDownloadWorker(task);
-			Future<Void> f = pool.submit(worker);
-			task.setFuture(f);
-		}
+		ContextExecutor exec = new ContextExecutor(context);
+		contexts.add(context);
+		pool.submit(exec);	
 	}
 	public void downloadResumeAllTask(){
-		Iterator<DownloadTask> it = tasks.iterator();
+		Iterator<IContext> it = contexts.iterator();
 		while(it.hasNext()){
-			DownloadTask task = it.next();
+			IContext task = it.next();
 			downloadResumeTask(task);
 		}
+	}
+	public List<IContext> getContexts(){
+		return contexts;
+	}
+	public void addNewTask(DownloadContext context) {
+		ContextExecutor exec = new ContextExecutor(context);
+		contexts.add(context);
+		pool.submit(exec);		
 	}
 }

@@ -4,7 +4,9 @@ import java.io.File;
 
 import org.apache.log4j.Logger;
 
-public class DownloadContext {
+import com.icesoft.tumblr.state.interfaces.IContext;
+
+public class DownloadContext implements IContext{
 	private static Logger logger = Logger.getLogger(DownloadContext.class); 
 
 	private String 	URL;
@@ -21,13 +23,15 @@ public class DownloadContext {
 	
 	private volatile boolean run;
 	private DownloadState state;
-	public DownloadContext(String URL, DownloadState state) {
+	public DownloadContext(String URL, DownloadState state, String savePath) {
 		this.URL = URL;
 		this.state = state;
+		this.savePath = savePath;
 	}
 	public void perform(){
 		if(state != null)
 		{
+			logger.debug(Thread.currentThread().getName() + " Execute perform for " + this.getURL() +" @" + this.state);
 			state = state.execute(this);
 		}
 	}
@@ -131,5 +135,9 @@ public class DownloadContext {
 		}else{
 			this.currentSpeed = 0;
 		}
+	}
+	@Override
+	public DownloadState getState() {
+		return this.state;
 	}
 }

@@ -4,6 +4,7 @@ import javax.swing.RowFilter;
 
 import com.icesoft.tumblr.downloader.workers.DownloadTask;
 import com.icesoft.tumblr.downloader.workers.DownloadTask.STATE;
+import com.icesoft.tumblr.state.interfaces.IContext;
 
 public class DownloadTaskStateFilter extends RowFilter<DownloadModel, Object>{
 	private STATE[] states;
@@ -13,7 +14,7 @@ public class DownloadTaskStateFilter extends RowFilter<DownloadModel, Object>{
 	@Override
 	public boolean include(javax.swing.RowFilter.Entry<? extends DownloadModel, ? extends Object> entry) {
 		DownloadModel model = entry.getModel();						
-		DownloadTask task = model.getTask(entry.getIdentifier());
+		IContext task = model.getContexts(entry.getIdentifier());
 		if(task != null && task.getState() != null){
 			for(STATE s : states){
 				if(s.equals(task.getState())){

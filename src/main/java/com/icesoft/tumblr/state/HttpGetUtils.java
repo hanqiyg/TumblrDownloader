@@ -46,7 +46,7 @@ public class HttpGetUtils {
 			try {
 				EntityUtils.consume(response.getEntity());
 			} catch (IOException e) {
-				downloadContext.setMessage("consume error.");
+				downloadContext.setMessage("consume error.[" + e.getLocalizedMessage() +"]");
 				return DownloadState.EXCEPTION;
 			}
 			try 

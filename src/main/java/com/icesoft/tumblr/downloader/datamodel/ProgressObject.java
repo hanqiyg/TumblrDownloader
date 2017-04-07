@@ -1,12 +1,12 @@
 package com.icesoft.tumblr.downloader.datamodel;
 
-import com.icesoft.tumblr.downloader.workers.DownloadTask;
+import com.icesoft.tumblr.state.interfaces.IContext;
 import com.icesoft.utils.UnitUtils;
 
 public class ProgressObject implements Comparable<ProgressObject>
 {
 	private float value;
-	public ProgressObject(DownloadTask task)
+	public ProgressObject(IContext task)
 	{
 		long curr = task.getLocalFilesize();
 		long full = task.getRemoteFilesize();

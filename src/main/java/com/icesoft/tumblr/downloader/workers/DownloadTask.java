@@ -4,7 +4,10 @@ import java.io.File;
 import java.util.Date;
 import java.util.concurrent.Future;
 
-public class DownloadTask 
+import com.icesoft.tumblr.state.DownloadState;
+import com.icesoft.tumblr.state.interfaces.IContext;
+
+public class DownloadTask
 {
 	private String 	url;
 	private String 	savePath;
@@ -184,5 +187,5 @@ public class DownloadTask
 		sb.append("message:" + message + "\r");
 		sb.append("future:" + future + "\r");
 		return sb.toString();
-	}	
+	}
 }

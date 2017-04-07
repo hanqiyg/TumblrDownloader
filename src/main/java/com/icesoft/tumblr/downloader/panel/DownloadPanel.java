@@ -18,6 +18,7 @@ import com.icesoft.tumblr.downloader.tablemodel.DownloadModel;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadModel.ColName;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadTaskStateFilter;
 import com.icesoft.tumblr.downloader.workers.DownloadTask;
+import com.icesoft.tumblr.state.interfaces.IContext;
 import com.icesoft.tumblr.downloader.tablemodel.ProgressCellRenderer;
 
 import javax.swing.JScrollPane;
@@ -30,6 +31,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
+import java.lang.Thread.State;
+import java.lang.management.ThreadInfo;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.locks.LockSupport;
 
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -40,7 +46,8 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 	private static Logger logger = Logger.getLogger(H2DBService.class);  
 	private JTable table;
 	private DownloadModel model;
-	private JLabel lblStats;
+	private JLabel lblHttpClientStats;
+	private JLabel lblThreadState;
 	private TableRowSorter<DownloadModel> sorter;
 	public DownloadPanel() {
 		model = new DownloadModel();
@@ -107,8 +114,11 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		gbc_plStatus.gridy = 1;
 		add(plStatus, gbc_plStatus);
 		
-		lblStats = new JLabel("");
-		plStatus.add(lblStats);
+		lblHttpClientStats = new JLabel("");
+		plStatus.add(lblHttpClientStats);
+		
+		lblThreadState = new JLabel("");
+		plStatus.add(lblThreadState);
 		scrollPane.setColumnHeaderView(table.getTableHeader());
 		scrollPane.setViewportView(table);
 		GridBagConstraints gbc_scrollPane = new GridBagConstraints();
@@ -121,10 +131,37 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 	public void loadStats(){
 		PoolStats s = HttpClientConnectionManager.getInstance().getStats();		
 		if(s != null){
-			lblStats.setText("HttpClient Usage:" + s.getLeased() + " / " + s.getMax());
+			lblHttpClientStats.setText("HttpClient Usage:" + s.getLeased() + " / " + s.getMax());
 		}else{
-			lblStats.setText("Fail to get HttpClient Infomation.");
+			lblHttpClientStats.setText("Fail to get HttpClient Infomation.");
 		}
+	}
+	public  void loadThreadsInfo(){
+/*		ThreadInfo[] infos = DownloadManager.getInstance().getThreadsInfo();
+		int total = 0;
+		int run = 0;
+
+		for(ThreadInfo i : infos){
+			String name = i.getThreadName();
+			State state = i.getThreadState();
+
+			if(name.contains("pool-1")){
+				total++;
+				if(state.equals(State.RUNNABLE)){
+					run++;
+				}
+			}
+		}*/
+		ThreadPoolExecutor pool = DownloadManager.getInstance().getPool();
+		String info = String.format("[monitor] [%d/%d] Active: %d, Completed: %d, Task: %d, isShutdown: %s, isTerminated: %s",
+                pool.getPoolSize(),
+                pool.getCorePoolSize(),
+                pool.getActiveCount(),
+                pool.getCompletedTaskCount(),
+                pool.getTaskCount(),
+                pool.isShutdown(),
+                pool.isTerminated());
+		lblThreadState.setText(info);
 	}
 
 	@Override
@@ -132,6 +169,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		if(model!= null){
 			fireTableDataChangeAndPreserveSelection(table);
 			loadStats();
+			loadThreadsInfo();
 		}	
 	}
 	public void fireTableDataChangeAndPreserveSelection(JTable table){
@@ -149,40 +187,35 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 	               return;  
 	           }  
 	           table.setRowSelectionInterval(focusedRowIndex, focusedRowIndex);
-	           DownloadTask task = model.getTask(focusedRowIndex);
+	           IContext task = model.getContexts(focusedRowIndex);
 	           if(task != null){
 	        	   JPopupMenu menu = getRightMouseMenu(task);
 		           menu.show(table, e.getX(), e.getY());  
 	           } 
 	       } 
 	}
-	private JPopupMenu getRightMouseMenu(DownloadTask task){
+	private JPopupMenu getRightMouseMenu(IContext task){
 		JPopupMenu rightMouseMenu = new JPopupMenu();
 		rightMouseMenu.add(getOpenFolderMenuItem(task));	
-		if(task.getFuture() != null)
-		{
-			rightMouseMenu.add(getStopMenuItem(task));
-		}
-		if(task.getFuture() == null){
-			rightMouseMenu.add(getDownloadMenuItem(task));
-		}
+		rightMouseMenu.add(getStopMenuItem(task));
+		rightMouseMenu.add(getDownloadMenuItem(task));
 		return rightMouseMenu; 
 	}
 
-	public JMenuItem getOpenFolderMenuItem(DownloadTask task){
+	public JMenuItem getOpenFolderMenuItem(IContext context){
 		JMenuItem item = new JMenuItem("Open Folder");  
 		item.addActionListener(new ActionListener() {  
             public void actionPerformed(ActionEvent evt) {  
-            	String folder = task.getFile().getParent();
+       
             	if (Desktop.isDesktopSupported()) {
             	    try {
-            	    	File parent = new File(folder);
+            	    	File parent = new File(context.getAbsolutePath()).getParentFile();
             	    	if(parent.exists())
             	    	{
             	    		Desktop.getDesktop().open(parent);
             	    	}else
             	    	{
-            	    		logger.debug("Folder[" + folder +"] does not exist.");
+            	    		logger.debug("Folder[" + parent.getAbsolutePath() +"] does not exist.");
             	    	}					
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
@@ -193,20 +226,20 @@ public class DownloadPanel extends JPanel implements IUpdatable{
         }); 
         return item;
 	}
-	public JMenuItem getStopMenuItem(DownloadTask task){
+	public JMenuItem getStopMenuItem(IContext context){
 		JMenuItem item = new JMenuItem("Stop");  
 		item.addActionListener(new ActionListener() {  
             public void actionPerformed(ActionEvent evt) {  
-            	task.stop();
+            	context.setRun(false);
             }
         }); 
         return item;
 	}
-	public JMenuItem getDownloadMenuItem(DownloadTask task){
+	public JMenuItem getDownloadMenuItem(IContext context){
 		JMenuItem item = new JMenuItem("Download");  
 		item.addActionListener(new ActionListener() {  
             public void actionPerformed(ActionEvent evt) {  
-            	DownloadManager.getInstance().downloadResumeTask(task);
+            	DownloadManager.getInstance().downloadResumeTask(context);
             }
         }); 
         return item;

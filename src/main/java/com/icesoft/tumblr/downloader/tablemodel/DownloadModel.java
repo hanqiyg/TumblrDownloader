@@ -9,6 +9,7 @@ import com.icesoft.tumblr.downloader.datamodel.SizeObject;
 import com.icesoft.tumblr.downloader.datamodel.SpeedObject;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.workers.DownloadTask;
+import com.icesoft.tumblr.state.interfaces.IContext;
 
 public class DownloadModel extends AbstractTableModel {
 	private static final long serialVersionUID = 4901965435625204398L;
@@ -60,7 +61,7 @@ public class DownloadModel extends AbstractTableModel {
 
 	@Override
 	public int getRowCount() {
-		return DownloadManager.getInstance().getTasks().size();
+		return DownloadManager.getInstance().getContexts().size();
 	}
 
 	@Override
@@ -79,27 +80,27 @@ public class DownloadModel extends AbstractTableModel {
 	}
 	@Override
 	public Object getValueAt(int row, int col) {		
-		DownloadTask task = DownloadManager.getInstance().getTasks().get(row);
+		IContext context = DownloadManager.getInstance().getContexts().get(row);
 		switch(ColName.values()[col])
 		{
-			case MESSAGE:		return task.getMessage();
-			case CREATETIME:	return new Date(task.getCreateTime());
+			case MESSAGE:		return context.getMessage();
+			case CREATETIME:	return new Date(context.getCreateTime());
 			case ID:			return row + 1;
-			case NAME:			return task.getFile().getAbsolutePath();
-			case PROGRESS:		return new ProgressObject(task);
-			case RECIVED:		return new SizeObject(task.getLocalFilesize());
-			case SPEED:			return new SpeedObject(task.getCurrentSpeed());
-			case STATUS:		return task.getState();
-			case TOTAL:			return new SizeObject(task.getRemoteFilesize());
-			case URL:			return task.getURL();
+			case NAME:			return context.getAbsolutePath();
+			case PROGRESS:		return new ProgressObject(context);
+			case RECIVED:		return new SizeObject(context.getLocalFilesize());
+			case SPEED:			return new SpeedObject(context.getCurrentSpeed());
+			case STATUS:		return context.getState();
+			case TOTAL:			return new SizeObject(context.getRemoteFilesize());
+			case URL:			return context.getURL();
 			default:			return null;
 		}		
 	}
-	public DownloadTask getTask(Object o){
+	public IContext getContexts(Object o){
 		if(o instanceof Integer){
 			int i = (int) o;
-			DownloadTask task = DownloadManager.getInstance().getTasks().get(i);
-			return task;
+			IContext context = DownloadManager.getInstance().getContexts().get(i);
+			return context;
 		}
 		return null;
 	}
