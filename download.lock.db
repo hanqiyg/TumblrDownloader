@@ -1,0 +1,6 @@
+#FileLock
+#Mon Apr 10 16:54:45 CST 2017
+hostName=ice-PC
+id=15b571284ec92f11d3f5d1cd302282496b077e622f3
+method=file
+server=192.168.10.122\:58650

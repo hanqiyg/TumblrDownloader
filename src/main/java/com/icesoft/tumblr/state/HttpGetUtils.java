@@ -14,7 +14,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 
 import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
-import com.icesoft.tumblr.downloader.workers.DownloadTask.STATE;
 import com.icesoft.utils.MineType;
 import com.icesoft.utils.StringUtils;
 
@@ -43,18 +42,15 @@ public class HttpGetUtils {
 			return DownloadState.EXCEPTION;
 		}finally
         {		
-			try {
-				EntityUtils.consume(response.getEntity());
-			} catch (IOException e) {
-				downloadContext.setMessage("consume error.[" + e.getLocalizedMessage() +"]");
-				return DownloadState.EXCEPTION;
-			}
-			try 
+			if(response != null)
 			{
-				response.close();
-			} catch (IOException e) {
-				downloadContext.setMessage("close response error.");
-				return DownloadState.EXCEPTION;
+				try 
+				{
+					response.close();
+				} catch (IOException e) {
+					downloadContext.setMessage("close response error.");
+					return DownloadState.EXCEPTION;
+				}
 			}
 			get.releaseConnection();
 		}
@@ -144,7 +140,6 @@ public class HttpGetUtils {
 						downloadContext.setMessage("Download Complete.");
 						return DownloadState.COMPLETE;
 					}
-
 				} catch (UnsupportedOperationException e) {
 					downloadContext.setMessage("Byte Channel Exception. [" + e.getLocalizedMessage() + "]");
 					return DownloadState.EXCEPTION;
@@ -155,7 +150,6 @@ public class HttpGetUtils {
 					downloadContext.setMessage("Write to File Exception. [" + e.getLocalizedMessage() + "]");
 					return DownloadState.EXCEPTION;
 				}finally{
-					EntityUtils.consume(entity);
 					if(rbc != null)
 					{
 						try {
@@ -182,12 +176,15 @@ public class HttpGetUtils {
 		} catch (IOException e) {
 			downloadContext.setMessage("Connection Exception. [" + e.getLocalizedMessage() + "]");
 			return DownloadState.EXCEPTION;
-		}finally{			
-			try {
-				response.close();
-			} catch (IOException e) {
-				downloadContext.setMessage("close response error.");
-				return DownloadState.EXCEPTION;
+		}finally{
+			if(response != null)
+			{
+				try {
+					response.close();
+				} catch (IOException e) {
+					downloadContext.setMessage("close response error.");
+					return DownloadState.EXCEPTION;
+				}
 			}
 			get.releaseConnection();
 		}

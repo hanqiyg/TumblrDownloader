@@ -2,6 +2,7 @@ package com.icesoft.tumblr.state;
 
 import java.util.concurrent.Callable;
 
+import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.state.interfaces.IContext;
 
 public class ContextExecutor implements Callable<Void>, Comparable<ContextExecutor> 
@@ -20,10 +21,23 @@ public class ContextExecutor implements Callable<Void>, Comparable<ContextExecut
 	@Override
 	public Void call() throws Exception {
 		context.setRun(true);
-		while(context.isRun() && context.getState() != null){
+		DownloadManager.getInstance().run(context);
+		while(context.isRun() 
+				&& context.getState() != DownloadState.COMPLETE 
+				&& context.getState() != DownloadState.EXCEPTION
+				&& context.getState() != DownloadState.PAUSE){
 			context.perform();
 		}
 		context.setRun(false);
+		if(context.getState() != DownloadState.COMPLETE){
+			DownloadManager.getInstance().complete(context);
+		}
+		if(context.getState() != DownloadState.EXCEPTION){
+			DownloadManager.getInstance().exception(context);
+		}
+		if(context.getState() != DownloadState.PAUSE){
+			DownloadManager.getInstance().stop(context);
+		}
 		return null;
 	}
 	public int getPriority() {
@@ -35,5 +49,8 @@ public class ContextExecutor implements Callable<Void>, Comparable<ContextExecut
 	@Override
 	public int compareTo(ContextExecutor o) {
 		return this.priority - o.priority;
+	}
+	public IContext getContext() {
+		return context;
 	}
 }

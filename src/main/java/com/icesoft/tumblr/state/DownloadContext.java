@@ -1,6 +1,7 @@
 package com.icesoft.tumblr.state;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 
@@ -13,12 +14,12 @@ public class DownloadContext implements IContext{
 	private String 	savePath;
 	private String 	filename;
 	private String 	ext;
-	private long   	remoteFilesize;
-	private long 	localFilesize;
-	private long 	createTime;
-	private long 	totalTime;	
-	private long 	currentSpeed;	
-	private boolean complete;	
+	private AtomicLong remoteFilesize = new AtomicLong(0);
+	private AtomicLong 	localFilesize = new AtomicLong(0);
+	private AtomicLong 	createTime = new AtomicLong(0);
+	private AtomicLong 	totalTime = new AtomicLong(0);	
+	private AtomicLong 	currentSpeed = new AtomicLong(0);
+	private volatile boolean complete;	
 	private String  message;
 	
 	private volatile boolean run;
@@ -28,6 +29,19 @@ public class DownloadContext implements IContext{
 		this.state = state;
 		this.savePath = savePath;
 	}
+	public DownloadContext(String url, String filename, long filesize, long time, int state,
+			String ext, String savepath) {
+		this.URL = url;
+		this.filename = filename;
+		this.remoteFilesize.set(filesize);
+		this.createTime.set(time);
+		if(state >=0 && state < DownloadState.values().length)
+		{
+			this.state = DownloadState.values()[state];
+		}
+		this.ext = ext;
+		this.savePath = savepath;
+	}
 	public void perform(){
 		if(state != null)
 		{
@@ -35,59 +49,59 @@ public class DownloadContext implements IContext{
 			state = state.execute(this);
 		}
 	}
-	public String getURL() {
+	public synchronized String getURL() {
 		return URL;
 	}
-	public void setURL(String uRL) {
+	public synchronized void setURL(String uRL) {
 		URL = uRL;
 	}
-	public String getSavePath() {
+	public synchronized String getSavePath() {
 		return savePath;
 	}
-	public void setSavePath(String savePath) {
+	public synchronized void setSavePath(String savePath) {
 		this.savePath = savePath;
 	}
-	public String getFilename() {
+	public synchronized String getFilename() {
 		return filename;
 	}
-	public void setFilename(String filename) {
+	public synchronized void setFilename(String filename) {
 		this.filename = filename;
 	}
-	public String getExt() {
+	public synchronized String getExt() {
 		return ext;
 	}
-	public void setExt(String ext) {
+	public synchronized void setExt(String ext) {
 		this.ext = ext;
 	}
 	public long getRemoteFilesize() {
-		return remoteFilesize;
+		return this.remoteFilesize.get();
 	}
 	public void setRemoteFilesize(long remoteFilesize) {
-		this.remoteFilesize = remoteFilesize;
+		this.remoteFilesize.set(remoteFilesize);
 	}
 	public long getLocalFilesize() {
-		return localFilesize;
+		return this.localFilesize.get();
 	}
 	public void setLocalFilesize(long localFilesize) {
-		this.localFilesize = localFilesize;
+		this.localFilesize.set(localFilesize);
 	}
 	public long getCreateTime() {
-		return createTime;
+		return this.createTime.get();
 	}
 	public void setCreateTime(long createTime) {
-		this.createTime = createTime;
+		this.createTime.set(createTime);
 	}
 	public long getTotalTime() {
-		return totalTime;
+		return this.totalTime.get();
 	}
 	public void setTotalTime(long totalTime) {
-		this.totalTime = totalTime;
+		this.totalTime.set(totalTime);
 	}
 	public long getCurrentSpeed() {
-		return currentSpeed;
+		return this.currentSpeed.get();
 	}
 	public void setCurrentSpeed(long currentSpeed) {
-		this.currentSpeed = currentSpeed;
+		this.currentSpeed.set(currentSpeed);
 	}
 	public boolean isComplete() {
 		return complete;
@@ -95,14 +109,14 @@ public class DownloadContext implements IContext{
 	public void setComplete(boolean complete) {
 		this.complete = complete;
 	}
-	public String getMessage() {
+	public synchronized String getMessage() {
 		return message;
 	}
-	public void setMessage(String message) {
+	public synchronized void setMessage(String message) {
 		this.message = message;
 		logger.info(message);
 	}
-	public String getAbsolutePath(){
+	public synchronized String getAbsolutePath(){
 		StringBuffer sb = new StringBuffer();
 		if(getSavePath() != null && !getSavePath().trim().equals(""))
 		{
@@ -127,17 +141,33 @@ public class DownloadContext implements IContext{
 		this.run = run;
 	}
 	public void addTotalTime(long t) {
-		this.totalTime += t;
+		this.totalTime.getAndAdd(t);
 	}
 	public void setCurrentSpeed(long time, long delta) {
 		if(time > 0){
-			this.currentSpeed = delta/time;
+			this.currentSpeed.set(delta/time);
 		}else{
-			this.currentSpeed = 0;
+			this.currentSpeed.set(0);
 		}
 	}
 	@Override
-	public DownloadState getState() {
+	public synchronized DownloadState getState() {
 		return this.state;
 	}
+	@Override
+	public synchronized void setState(DownloadState state) {
+		this.state = state;
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if(obj != null && obj instanceof IContext)
+		{
+			IContext context = (IContext) obj;
+			if(context.getURL().equals(this.getURL()))
+			{
+				return true;
+			}
+		}
+		return false;
+	}	
 }

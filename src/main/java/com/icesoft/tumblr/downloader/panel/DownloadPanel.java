@@ -3,7 +3,6 @@ package com.icesoft.tumblr.downloader.panel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
-import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.apache.http.pool.PoolStats;
@@ -17,7 +16,7 @@ import com.icesoft.tumblr.downloader.tablemodel.DateCellRenderer;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadModel;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadModel.ColName;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadTaskStateFilter;
-import com.icesoft.tumblr.downloader.workers.DownloadTask;
+import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
 import com.icesoft.tumblr.downloader.tablemodel.ProgressCellRenderer;
 
@@ -31,12 +30,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
-import java.lang.Thread.State;
-import java.lang.management.ThreadInfo;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.locks.LockSupport;
-
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JButton;
@@ -51,6 +45,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 	private TableRowSorter<DownloadModel> sorter;
 	public DownloadPanel() {
 		model = new DownloadModel();
+		DownloadManager.getInstance().setDataModel(model);
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] {0};
 		gridBagLayout.rowHeights = new int[] {0};
@@ -72,7 +67,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		});
 		
 		JPanel plControl = new JPanel();
-		for(DownloadTask.STATE state : DownloadTask.STATE.values()){
+		for(DownloadState state : DownloadState.values()){
 			JButton button = new JButton(state.toString());
 			button.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -90,7 +85,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		plControl.add(btnAll);
 		
 		JButton btnDownloadAll = new JButton("DownloadAll ");
-		btnAll.addActionListener(new ActionListener() {
+		btnDownloadAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				DownloadManager.getInstance().downloadResumeAllTask();
 			}
@@ -174,7 +169,8 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 	}
 	public void fireTableDataChangeAndPreserveSelection(JTable table){
         final int[] sel = table.getSelectedRows();
-        AbstractTableModel model =  (AbstractTableModel) table.getModel();
+        DownloadModel model =  (DownloadModel) table.getModel();
+        model.updateRunning();
         model.fireTableDataChanged();
         for (int i=0; i<sel.length; i++)
         	table.getSelectionModel().addSelectionInterval(sel[i], sel[i]);

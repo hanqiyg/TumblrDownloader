@@ -32,4 +32,5 @@ public interface IContext {
 	public void addTotalTime(long t);
 	public void setCurrentSpeed(long time, long delta);
 	public DownloadState getState();
+	public void setState(DownloadState state);
 }

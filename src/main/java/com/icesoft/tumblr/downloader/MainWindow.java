@@ -3,31 +3,22 @@ package com.icesoft.tumblr.downloader;
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Date;
 import java.util.Properties;
 
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 import com.icesoft.tumblr.downloader.configure.Settings;
-import com.icesoft.tumblr.downloader.managers.DownloadManager;
-import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
-import com.icesoft.tumblr.downloader.managers.QueryManager;
 import com.icesoft.tumblr.downloader.monitor.UIMonitor;
 import com.icesoft.tumblr.downloader.panel.DownloadPanel;
 import com.icesoft.tumblr.downloader.panel.LikesPanel;
 import com.icesoft.tumblr.downloader.panel.ResourceStatusPanel;
 import com.icesoft.tumblr.downloader.panel.SettingsPanel;
-import com.icesoft.tumblr.downloader.service.H2DBService;
 
 
 public class MainWindow {
@@ -58,7 +49,7 @@ public class MainWindow {
 
 		PropertyConfigurator.configure(pro);
 	}
-	private static Logger logger = Logger.getLogger(MainWindow.class);  
+	//private static Logger logger = Logger.getLogger(MainWindow.class);  
 	private JFrame frame;	
 	
 	private LikesPanel likesPanel;
@@ -73,33 +64,14 @@ public class MainWindow {
 					MainWindow window = new MainWindow();
 					window.frame.setVisible(true);
 					window.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-					window.frame.addWindowListener(new WindowAdapter(){
+					window.frame.addWindowListener(new WindowAdapter()
+					{
 						public void windowClosing(WindowEvent e){
-							logger.debug("Shutdown:" + "UIMonitor" + new Date().toString());
-							UIMonitor.getInstance().turnOff();
-							logger.debug("Shutdown:" + "QueryManager" + new Date().toString());
-							QueryManager.getInstance().stopQuery();	
-							logger.debug("Shutdown:" + "DownloadManager" + new Date().toString());
-							DownloadManager.getInstance().stopAll();
-							logger.debug("Shutdown:" + "HttpClientConnectionManager" + new Date().toString());
-							try {
-								HttpClientConnectionManager.getInstance().shutdown();
-							} catch (IOException e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
-							}
-							logger.debug("Shutdown:" + "H2DBService" + new Date().toString());
-							try {
-								H2DBService.getInstance().close();
-							} catch (SQLException e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
-							}
-							logger.debug("saveSettings:" + "setWindowSettings" + new Date().toString());
-							Rectangle bounds = window.frame.getBounds();
-							Settings.getInstance().setWindowSettings(bounds.x, bounds.y, bounds.width, bounds.height);
-							logger.info("exit.");
-							System.exit(0);
+							ExitWindow exit = new ExitWindow();
+							exit.setVisible(false);  
+							exit.setModal(true);  
+							exit.setAlwaysOnTop(false);  
+							exit.setVisible(true);
 						}
 					}); 
 				} catch (Exception e) {
@@ -108,6 +80,7 @@ public class MainWindow {
 			}
 		});
 	}
+	
 	public MainWindow() {
 		initialize();
 	}
@@ -164,6 +137,6 @@ public class MainWindow {
 		UIMonitor.getInstance().addUpdatable(likesPanel);
 		UIMonitor.getInstance().addUpdatable(downloadPanel);
 		UIMonitor.getInstance().addUpdatable(resourceStatusPanel);
-		UIMonitor.getInstance().turnOn();	
+		UIMonitor.getInstance().turnOn();
 	}
 }

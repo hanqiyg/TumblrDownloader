@@ -1,6 +1,8 @@
 package com.icesoft.tumblr.downloader.tablemodel;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
@@ -14,7 +16,9 @@ import com.icesoft.tumblr.state.interfaces.IContext;
 public class DownloadModel extends AbstractTableModel {
 	private static final long serialVersionUID = 4901965435625204398L;
 	Object name[] = {"#","Name","Url","Status","Progress","Speed","Recived Size","Total Size"};
-
+	
+	private List<IContext> running = new ArrayList<IContext>(),waiting = new ArrayList<IContext>();
+	
 	public enum ColName{
 		ID(0,"#",Integer.class),
 		NAME(1,"Name",String.class),
@@ -54,6 +58,14 @@ public class DownloadModel extends AbstractTableModel {
 			return null;
 		}
 	}
+	public void updateRunning(){
+		running = DownloadManager.getInstance().getRunningList();
+		this.fireTableDataChanged();
+	}
+	public void updateWaiting(){
+		waiting = DownloadManager.getInstance().getWaitingList();
+		this.fireTableDataChanged();
+	}
 	@Override
 	public int getColumnCount() {
 		return ColName.values().length;
@@ -61,7 +73,7 @@ public class DownloadModel extends AbstractTableModel {
 
 	@Override
 	public int getRowCount() {
-		return DownloadManager.getInstance().getContexts().size();
+		return running.size() + waiting.size();
 	}
 
 	@Override
@@ -79,8 +91,8 @@ public class DownloadModel extends AbstractTableModel {
 		return false;
 	}
 	@Override
-	public Object getValueAt(int row, int col) {		
-		IContext context = DownloadManager.getInstance().getContexts().get(row);
+	public Object getValueAt(int row, int col) {
+		IContext context = getContexts(row);		
 		switch(ColName.values()[col])
 		{
 			case MESSAGE:		return context.getMessage();
@@ -99,7 +111,12 @@ public class DownloadModel extends AbstractTableModel {
 	public IContext getContexts(Object o){
 		if(o instanceof Integer){
 			int i = (int) o;
-			IContext context = DownloadManager.getInstance().getContexts().get(i);
+			IContext context;
+			if(i <  running.size()){
+				context = running.get(i);
+			}else{
+				context = waiting.get(i - running.size());
+			}
 			return context;
 		}
 		return null;
