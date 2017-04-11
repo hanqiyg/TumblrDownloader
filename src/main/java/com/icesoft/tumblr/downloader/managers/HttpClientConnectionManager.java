@@ -17,13 +17,15 @@ import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.pool.PoolStats;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.apache.log4j.Logger;
+
 import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.downloader.monitor.IdleConnectionMonitor;
 
 public class HttpClientConnectionManager 
 {
 	private static final int TIMEOUT = 10 * 1000;
-	//private static Logger logger = Logger.getLogger(HttpClientConnectionManager.class);  
+	private static Logger logger = Logger.getLogger(HttpClientConnectionManager.class);  
 	private PoolingHttpClientConnectionManager connManager;
 	private IdleConnectionMonitor monitor;
 	private CloseableHttpClient client;
@@ -89,10 +91,14 @@ public class HttpClientConnectionManager
 	public void closeExpiredConnections() {
 		connManager.closeExpiredConnections();		
 	}
-	public void shutdown() throws IOException{
+	public void shutdown(){
 		monitor.shutdown();
 		connManager.close();
-		client.close();
+		try {
+			client.close();
+		} catch (IOException e) {
+			logger.debug("close CloseableHttpClient exception.");
+		}
 	}
 	public PoolStats getStats(){
 		return connManager.getTotalStats();

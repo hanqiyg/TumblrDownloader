@@ -1,11 +1,14 @@
-package com.icesoft.tumblr.state;
+package com.icesoft.tumblr.contexts;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 
+import com.icesoft.tumblr.state.DownloadPriority;
+import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
+
 
 public class DownloadContext implements IContext{
 	private static Logger logger = Logger.getLogger(DownloadContext.class); 
@@ -22,12 +25,15 @@ public class DownloadContext implements IContext{
 	private volatile boolean complete;	
 	private String  message;
 	
+	private DownloadPriority priority;
+	
 	private volatile boolean run;
 	private DownloadState state;
 	public DownloadContext(String URL, DownloadState state, String savePath) {
 		this.URL = URL;
 		this.state = state;
 		this.savePath = savePath;
+		this.priority = DownloadPriority.NORMAL;
 	}
 	public DownloadContext(String url, String filename, long filesize, long time, int state,
 			String ext, String savepath) {
@@ -45,7 +51,6 @@ public class DownloadContext implements IContext{
 	public void perform(){
 		if(state != null)
 		{
-			logger.debug(Thread.currentThread().getName() + " Execute perform for " + this.getURL() +" @" + this.state);
 			state = state.execute(this);
 		}
 	}
@@ -169,5 +174,13 @@ public class DownloadContext implements IContext{
 			}
 		}
 		return false;
-	}	
+	}
+	@Override
+	public synchronized void setPriority(DownloadPriority priority) {
+		this.priority = priority;
+	}
+	@Override
+	public synchronized DownloadPriority getPriority() {
+		return this.priority;
+	}
 }

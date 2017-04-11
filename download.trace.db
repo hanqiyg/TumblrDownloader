@@ -21551,3 +21551,6 @@ Caused by: java.lang.IllegalArgumentException: 1491378020793
 2017-04-10 15:54:59 jdbc[3]: exception
 org.h2.jdbc.JdbcSQLException: Table "DOWNLOAD" already exists; SQL statement:
 CREATE TABLE download (url VARCHAR(2083) primary key, createtime TIMESTAMP, state INT, filename VARCHAR(255),filesize BIGINT, ext VARCHAR(64), savepath VARCHAR(255)) [42101-194]
+2017-04-11 18:00:13 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "DOWNLOAD" already exists; SQL statement:
+CREATE TABLE download (url VARCHAR(2083) primary key, createtime TIMESTAMP, state INT, filename VARCHAR(255),filesize BIGINT, ext VARCHAR(64), savepath VARCHAR(255)) [42101-194]

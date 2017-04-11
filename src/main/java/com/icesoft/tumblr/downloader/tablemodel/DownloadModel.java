@@ -1,9 +1,6 @@
 package com.icesoft.tumblr.downloader.tablemodel;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-
 import javax.swing.table.AbstractTableModel;
 
 import com.icesoft.tumblr.downloader.datamodel.ProgressObject;
@@ -11,26 +8,25 @@ import com.icesoft.tumblr.downloader.datamodel.SizeObject;
 import com.icesoft.tumblr.downloader.datamodel.SpeedObject;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.workers.DownloadTask;
+import com.icesoft.tumblr.state.DownloadPriority;
 import com.icesoft.tumblr.state.interfaces.IContext;
 
 public class DownloadModel extends AbstractTableModel {
 	private static final long serialVersionUID = 4901965435625204398L;
-	Object name[] = {"#","Name","Url","Status","Progress","Speed","Recived Size","Total Size"};
-	
-	private List<IContext> running = new ArrayList<IContext>(),waiting = new ArrayList<IContext>();
 	
 	public enum ColName{
 		ID(0,"#",Integer.class),
 		NAME(1,"Name",String.class),
 		URL(2,"URL",String.class),
-		STATUS(3,"Status",DownloadTask.STATE.class),
-		PROGRESS(4,"Progress",ProgressObject.class),
-		SPEED(5,"Speed",SpeedObject.class),
-		CREATETIME(6,"Create Time",Date.class),
-		RECIVED(7,"Recived Size",SizeObject.class),
-		TOTAL(8,"Total Size",SizeObject.class),
-		MESSAGE(9,"Message",String.class);
-		
+		PRIORITY(3,"Priority",DownloadPriority.class),
+		STATUS(4,"Status",DownloadTask.STATE.class),
+		PROGRESS(5,"Progress",ProgressObject.class),
+		SPEED(6,"Speed",SpeedObject.class),
+		CREATETIME(7,"Create Time",Date.class),
+		RECIVED(8,"Recived Size",SizeObject.class),
+		TOTAL(9,"Total Size",SizeObject.class),
+		MESSAGE(10,"Message",String.class);
+
 		private int index;
 		private String text;
 		private Class<?> clazz;
@@ -58,14 +54,6 @@ public class DownloadModel extends AbstractTableModel {
 			return null;
 		}
 	}
-	public void updateRunning(){
-		running = DownloadManager.getInstance().getRunningList();
-		this.fireTableDataChanged();
-	}
-	public void updateWaiting(){
-		waiting = DownloadManager.getInstance().getWaitingList();
-		this.fireTableDataChanged();
-	}
 	@Override
 	public int getColumnCount() {
 		return ColName.values().length;
@@ -73,7 +61,7 @@ public class DownloadModel extends AbstractTableModel {
 
 	@Override
 	public int getRowCount() {
-		return running.size() + waiting.size();
+		return DownloadManager.getInstance().getContexts().size();
 	}
 
 	@Override
@@ -92,7 +80,7 @@ public class DownloadModel extends AbstractTableModel {
 	}
 	@Override
 	public Object getValueAt(int row, int col) {
-		IContext context = getContexts(row);		
+		IContext context = getContexts(row);
 		switch(ColName.values()[col])
 		{
 			case MESSAGE:		return context.getMessage();
@@ -105,19 +93,17 @@ public class DownloadModel extends AbstractTableModel {
 			case STATUS:		return context.getState();
 			case TOTAL:			return new SizeObject(context.getRemoteFilesize());
 			case URL:			return context.getURL();
+			case PRIORITY:		return context.getPriority();
 			default:			return null;
 		}		
 	}
 	public IContext getContexts(Object o){
 		if(o instanceof Integer){
 			int i = (int) o;
-			IContext context;
-			if(i <  running.size()){
-				context = running.get(i);
-			}else{
-				context = waiting.get(i - running.size());
+			if(i >=0 && i < DownloadManager.getInstance().getContexts().size())
+			{
+				return DownloadManager.getInstance().getContexts().get(i);
 			}
-			return context;
 		}
 		return null;
 	}

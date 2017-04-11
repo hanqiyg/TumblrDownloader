@@ -14,15 +14,11 @@ public class AllLikedQueryWorker implements IQueryWorker{
 	private int count = 0;
 	private int offset = 0;
 	
-	public AllLikedQueryWorker()
-	{
-		
-	}
+	public AllLikedQueryWorker(){}
 	public AllLikedQueryWorker(int limit)
 	{
 		this.limit = limit;
-	}
-	
+	}	
 	@Override
 	public Void call() throws Exception {
 		count = TumblrServices.getInstance().getLikesCount();

@@ -13,6 +13,7 @@ import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
 import com.icesoft.tumblr.downloader.panel.interfaces.IUpdatable;
 import com.icesoft.tumblr.downloader.service.H2DBService;
 import com.icesoft.tumblr.downloader.tablemodel.DateCellRenderer;
+import com.icesoft.tumblr.downloader.tablemodel.DownloadActiveFilter;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadModel;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadModel.ColName;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadTaskStateFilter;
@@ -45,7 +46,6 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 	private TableRowSorter<DownloadModel> sorter;
 	public DownloadPanel() {
 		model = new DownloadModel();
-		DownloadManager.getInstance().setDataModel(model);
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] {0};
 		gridBagLayout.rowHeights = new int[] {0};
@@ -76,6 +76,15 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 			});
 			plControl.add(button);
 		}
+		
+		JButton btnActive = new JButton("Active");
+		btnActive.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				sorter.setRowFilter(new DownloadActiveFilter());
+			}
+		});
+		plControl.add(btnActive);
+		
 		JButton btnAll = new JButton("ALL");
 		btnAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -87,7 +96,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		JButton btnDownloadAll = new JButton("DownloadAll ");
 		btnDownloadAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				DownloadManager.getInstance().downloadResumeAllTask();
+				DownloadManager.getInstance().downloadResumeAllTasks();
 			}
 		});
 		plControl.add(btnDownloadAll);
@@ -170,7 +179,6 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 	public void fireTableDataChangeAndPreserveSelection(JTable table){
         final int[] sel = table.getSelectedRows();
         DownloadModel model =  (DownloadModel) table.getModel();
-        model.updateRunning();
         model.fireTableDataChanged();
         for (int i=0; i<sel.length; i++)
         	table.getSelectionModel().addSelectionInterval(sel[i], sel[i]);
@@ -235,10 +243,9 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		JMenuItem item = new JMenuItem("Download");  
 		item.addActionListener(new ActionListener() {  
             public void actionPerformed(ActionEvent evt) {  
-            	DownloadManager.getInstance().downloadResumeTask(context);
+            	DownloadManager.getInstance().downloadResumeSingleTask(context);
             }
         }); 
         return item;
 	}
 }
-

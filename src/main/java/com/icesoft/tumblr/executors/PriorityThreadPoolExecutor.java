@@ -62,8 +62,8 @@ public class PriorityThreadPoolExecutor extends ThreadPoolExecutor {
             object = runnable;
         }
 
-        @Override
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings("rawtypes")
+		@Override
         public int compareTo(ComparableFutureTask<V> o) {
             if (this == o) {
                 return 0;

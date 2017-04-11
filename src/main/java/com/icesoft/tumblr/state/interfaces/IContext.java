@@ -1,8 +1,9 @@
 package com.icesoft.tumblr.state.interfaces;
 
+import com.icesoft.tumblr.state.DownloadPriority;
 import com.icesoft.tumblr.state.DownloadState;
 
-public interface IContext {
+public interface IContext{
 	public void perform();
 	public String getURL();
 	public void setURL(String uRL);
@@ -33,4 +34,6 @@ public interface IContext {
 	public void setCurrentSpeed(long time, long delta);
 	public DownloadState getState();
 	public void setState(DownloadState state);
+	public void setPriority(DownloadPriority priority);
+	public DownloadPriority getPriority();		
 }

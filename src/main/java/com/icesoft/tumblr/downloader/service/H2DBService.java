@@ -12,7 +12,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.icesoft.tumblr.state.DownloadContext;
+import com.icesoft.tumblr.contexts.DownloadContext;
 import com.icesoft.tumblr.state.interfaces.IContext;
 
 public class H2DBService {	
@@ -143,7 +143,7 @@ public class H2DBService {
 		}
 	}
 	
-	public void updateTask(IContext context)
+	public void updateContext(IContext context)
 	{
 		String url = context.getURL();
 		String filename = context.getFilename();
@@ -163,8 +163,12 @@ public class H2DBService {
 			}
 		}
 	}
-	public void close() throws SQLException{
-		con.close();
+	public void close(){
+		try {
+			con.close();
+		} catch (SQLException e) {
+			logger.debug("connection close." + e.getLocalizedMessage());
+		}
 	}
 	public void initTask(IContext context) {
 		try 

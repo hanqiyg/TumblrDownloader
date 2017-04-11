@@ -3,6 +3,7 @@ package com.icesoft.tumblr.downloader;
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -67,7 +68,13 @@ public class MainWindow {
 					window.frame.addWindowListener(new WindowAdapter()
 					{
 						public void windowClosing(WindowEvent e){
-							ExitWindow exit = new ExitWindow();
+							Rectangle bounds = window.frame.getBounds();
+							Settings.getInstance().setWindowSettings(bounds.x, bounds.y, bounds.width, bounds.height);
+							int w = window.frame.getWidth() / 2;
+							int h = window.frame.getHeight() / 2;
+							int x = window.frame.getX() + w /2;
+							int y = window.frame.getY() + h /2;
+							ExitWindow exit = new ExitWindow(x,y,w,h);
 							exit.setVisible(false);  
 							exit.setModal(true);  
 							exit.setAlwaysOnTop(false);  

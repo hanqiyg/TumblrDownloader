@@ -7,6 +7,7 @@ import javax.swing.border.EmptyBorder;
 
 import org.apache.log4j.Logger;
 
+import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
 import com.icesoft.tumblr.downloader.managers.QueryManager;
@@ -16,6 +17,7 @@ import com.icesoft.tumblr.downloader.service.H2DBService;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -24,19 +26,23 @@ import java.util.Date;
 import java.awt.GridLayout;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.FlowLayout;
 
 public class ExitWindow extends JDialog {
 	private static final long serialVersionUID = 4031211110971171392L;
 	private static Logger logger = Logger.getLogger(ExitWindow.class);  
 	private final JPanel contentPanel = new JPanel();
 	private JLabel lblContext;
-	private JProgressBar progressBar;
-
+	private Thread exitThread;
+	
+	private static final String WARNING = "Waiting for Task close normally.\n\r Force close will cause problem.";
 	/**
 	 * Create the dialog.
 	 */
-	public ExitWindow() {
-		setBounds(100, 100, 450, 300);
+	public ExitWindow(int x,int y,int w,int h) {
+		setBounds(x, y, w, h);
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWeights = new double[]{1.0};
 		gridBagLayout.rowWeights = new double[]{1.0, 0.0};
@@ -50,7 +56,7 @@ public class ExitWindow extends JDialog {
 		getContentPane().add(contentPanel, gbc_contentPanel);
 		GridBagLayout gbl_contentPanel = new GridBagLayout();
 		gbl_contentPanel.columnWeights = new double[]{1.0};
-		gbl_contentPanel.rowWeights = new double[]{1.0, 1.0, 1.0};
+		gbl_contentPanel.rowWeights = new double[]{1.0, 1.0};
 		contentPanel.setLayout(gbl_contentPanel);
 		{
 			JLabel lblExit = new JLabel("Exit");
@@ -62,21 +68,13 @@ public class ExitWindow extends JDialog {
 			contentPanel.add(lblExit, gbc_lblExit);
 		}
 		{
-			lblContext = new JLabel("context");
+			lblContext = new JLabel(WARNING);
 			GridBagConstraints gbc_lblContext = new GridBagConstraints();
 			gbc_lblContext.fill = GridBagConstraints.VERTICAL;
 			gbc_lblContext.insets = new Insets(0, 0, 5, 0);
 			gbc_lblContext.gridx = 0;
 			gbc_lblContext.gridy = 1;
 			contentPanel.add(lblContext, gbc_lblContext);
-		}
-		{
-			progressBar = new JProgressBar();
-			GridBagConstraints gbc_progressBar = new GridBagConstraints();
-			gbc_progressBar.insets = new Insets(0, 0, 5, 0);
-			gbc_progressBar.gridx = 0;
-			gbc_progressBar.gridy = 2;
-			contentPanel.add(progressBar, gbc_progressBar);
 		}
 		{
 			JPanel buttonPane = new JPanel();
@@ -86,64 +84,57 @@ public class ExitWindow extends JDialog {
 			gbc_buttonPane.gridx = 0;
 			gbc_buttonPane.gridy = 1;
 			getContentPane().add(buttonPane, gbc_buttonPane);
-			buttonPane.setLayout(new GridLayout(0, 2, 0, 0));
 			{
-				JButton btnExit = new JButton("Exit");
+				JButton btnExit = new JButton("Force Close");
+				btnExit.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						DownloadManager.getInstance().stopNow();
+						if(exitThread != null && !exitThread.isAlive())
+						{
+							exitThread.interrupt();
+						}
+						System.exit(0);
+					}
+				});
+				buttonPane.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+				{
+					JButton btnNormalCloseAnd = new JButton("Normal Close And Wait");
+					btnNormalCloseAnd.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent e) {
+							if(exitThread != null && !exitThread.isAlive())
+							{
+								exitThread.start();
+							}
+							btnNormalCloseAnd.setEnabled(false);
+						}
+					});
+					buttonPane.add(btnNormalCloseAnd);
+				}
 				btnExit.setActionCommand("OK");
 				buttonPane.add(btnExit);
 				getRootPane().setDefaultButton(btnExit);
 			}
-			{
-				JButton btnCancel = new JButton("Cancel");
-				btnCancel.setActionCommand("Cancel");
-				buttonPane.add(btnCancel);
-			}
 		}
-		Thread exitThread = new Thread(){
+		exitThread = new Thread(){
 			@Override
-			public void run(){ 
-				progressBar.setMaximum(6);
-				progressBar.setMinimum(0);
-				
-				setMessage("Shutdown:" + "UIMonitor" + new Date().toString());
-				UIMonitor.getInstance().turnOff();
-				progressBar.setValue(1);
-				setMessage("Shutdown:" + "QueryManager" + new Date().toString());
+			public void run(){
+				long begin = System.currentTimeMillis();
+				logger.debug("Shutdown:" + "QueryManager@[" + new Date().toString()+"]");
 				QueryManager.getInstance().stopQuery();	
-				progressBar.setValue(2);
-				setMessage("Shutdown:" + "DownloadManager" + new Date().toString());
+				logger.debug("Shutdown:" + "DownloadManager@[" + new Date().toString()+"]");
 				DownloadManager.getInstance().stopAll();
-				progressBar.setValue(3);
-				setMessage("Shutdown:" + "HttpClientConnectionManager" + new Date().toString());
-				try {
-					HttpClientConnectionManager.getInstance().shutdown();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				progressBar.setValue(4);
-				setMessage("Shutdown:" + "H2DBService" + new Date().toString());
-				try {
-					H2DBService.getInstance().close();
-				} catch (SQLException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				progressBar.setValue(5);
-				setMessage("saveSettings:" + "setWindowSettings" + new Date().toString());
-	/*			Rectangle bounds = window.frame.getBounds();
-				Settings.getInstance().setWindowSettings(bounds.x, bounds.y, bounds.width, bounds.height);*/
-				logger.info("exit.");
-				progressBar.setValue(6);
+				logger.debug("Shutdown:" + "HttpClientConnectionManager@[" + new Date().toString()+"]");
+				HttpClientConnectionManager.getInstance().shutdown();	
+				logger.debug("Shutdown:" + "H2DBService@[" + new Date().toString()+"]");
+				H2DBService.getInstance().close();
+				logger.debug("Shutdown:" + "UIMonitor@[" + new Date().toString()+"]");
+				UIMonitor.getInstance().turnOff();
+				logger.debug("exit.@[" + new Date().toString()+"]");
+				long end = System.currentTimeMillis();
+				logger.debug("exit.@[" + (end - begin) +"ms]");
 				System.exit(0);
 			}
 		};
-		exitThread.start();
 		this.setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
 	}
-	public void setMessage(String msg){
-		logger.debug(msg);
-		lblContext.setText(msg);
-	}
-
 }
