@@ -291,12 +291,7 @@ public class SettingsPanel extends JPanel {
 							Settings.getInstance().setSaveLocation(file.getAbsolutePath());
 						}
 					}else{
-						try {
-							file.createNewFile();
-						} catch (IOException e1) {
-							logger.debug("create folder [" + file.getAbsolutePath() 
-							+"] fail, cause by [" + e1.getLocalizedMessage() + "].");
-						}
+						file.mkdirs();			
 						Settings.getInstance().setSaveLocation(file.getAbsolutePath());
 					}
 					

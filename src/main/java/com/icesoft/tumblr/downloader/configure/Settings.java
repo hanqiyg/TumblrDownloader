@@ -13,7 +13,7 @@ import com.icesoft.tumblr.settings.WindowSettings;
 
 public class Settings {
 	private static Logger logger = Logger.getLogger(Settings.class);
-	public static final String PACKAGE_NAME = "com1.icesoft.tumblr.Settings";
+	public static final String PACKAGE_NAME = "com.icesoft.tumblr.Settings";
 	public static final String UNNAMEDBLOG = "UnnamedBlog";
 
 	public int buffer_size = 1024;
