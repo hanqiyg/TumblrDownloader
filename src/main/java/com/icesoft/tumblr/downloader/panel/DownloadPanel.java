@@ -1,7 +1,23 @@
 package com.icesoft.tumblr.downloader.panel;
 
+import java.awt.Desktop;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.ThreadPoolExecutor;
+
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.TableRowSorter;
 
@@ -11,34 +27,18 @@ import org.apache.log4j.Logger;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
 import com.icesoft.tumblr.downloader.panel.interfaces.IUpdatable;
-import com.icesoft.tumblr.downloader.service.H2DBService;
 import com.icesoft.tumblr.downloader.tablemodel.DateCellRenderer;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadActiveFilter;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadModel;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadModel.ColName;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadTaskStateFilter;
+import com.icesoft.tumblr.downloader.tablemodel.ProgressCellRenderer;
 import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
-import com.icesoft.tumblr.downloader.tablemodel.ProgressCellRenderer;
-
-import javax.swing.JScrollPane;
-import java.awt.GridBagLayout;
-import java.awt.Desktop;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.ThreadPoolExecutor;
-import javax.swing.JLabel;
-import javax.swing.JMenuItem;
-import javax.swing.JButton;
 
 public class DownloadPanel extends JPanel implements IUpdatable{
 	private static final long serialVersionUID = 4111940040655069650L;
-	private static Logger logger = Logger.getLogger(H2DBService.class);  
+	private static Logger logger = Logger.getLogger(DownloadPanel.class);  
 	private JTable table;
 	private DownloadModel model;
 	private JLabel lblHttpClientStats;

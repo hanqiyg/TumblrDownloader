@@ -31,7 +31,7 @@ public class HttpGetWorker implements Callable<Void>, Comparable<HttpGetWorker>
 	@Override
 	public int compareTo(HttpGetWorker o) 
 	{
-		return context.getPriority().intValue() - o.getContext().getPriority().intValue();
+		return context.getPriority().ordinal() - o.getContext().getPriority().ordinal();
 	}
 	public IContext getContext() 
 	{

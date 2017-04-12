@@ -9,10 +9,11 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.icesoft.tumblr.contexts.DownloadContext;
+import com.icesoft.tumblr.state.DownloadPriority;
+import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
 
 public class H2DBService {	
@@ -39,13 +40,12 @@ public class H2DBService {
 	public static H2DBService getInstance(){
 		return instance;
 	}	
-	
 	public void createDB()
 	{
 		try {
 	        Statement stmt = con.createStatement();
 	        stmt.execute("CREATE TABLE " + TABLE_NAME + " (url VARCHAR(2083) primary key, createtime TIMESTAMP, state INT, "
-	        		+ "filename VARCHAR(255),filesize BIGINT, ext VARCHAR(64), savepath VARCHAR(255))");
+	        		+ "filename VARCHAR(255),filesize BIGINT, ext VARCHAR(64), savepath VARCHAR(255),totalTime BIGINT, priority INT)");
 	        stmt.close();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -62,18 +62,6 @@ public class H2DBService {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}
-	
-	public void initTask(String url){
-		try 
-		{
-			Statement stmt = con.createStatement();	        
-	        stmt.execute("INSERT INTO " + TABLE_NAME  + " (url,createtime,state,filename) VALUES ('" + url +"','" 
-	        		+ new Timestamp(System.currentTimeMillis()) +"','" + 0 + "','" + null + "')");	        
-	        stmt.close();
-		} catch (SQLException e) {
-			logger.debug("stmt execute." + e.getLocalizedMessage());
-		}        
 	}
 	public List<IContext> loadTask(){
 		List<IContext> tasks = new ArrayList<IContext>();
@@ -99,8 +87,9 @@ public class H2DBService {
 	        	long filesize = rs.getLong("filesize");
 	        	String ext = rs.getString("ext");
 	        	String savepath = rs.getString("savepath");
-	        	
-	        	DownloadContext task = new DownloadContext(url, filename, filesize, time.getTime(), state,ext, savepath);
+	        	long totalTime = rs.getLong("totalTime");
+	        	int priority = rs.getInt("priority");
+	        	DownloadContext task = new DownloadContext(url, filename, filesize, time.getTime(), state,ext, savepath,totalTime,priority);
 	        	tasks.add(task);
 	        }
 	        stmt.close();
@@ -122,11 +111,19 @@ public class H2DBService {
 			long filesize = context.getRemoteFilesize();
 			String savepath = context.getSavePath();
 			int state = context.getState().ordinal();
+			long totalTime = context.getTotalTime();
+			int priority = context.getPriority().ordinal();
 			if(url != null && !url.trim().equals("")){
 				try {
 					stmt = con.createStatement();
-					stmt.execute("UPDATE " + TABLE_NAME + " SET state='" + state + "', "
-							+"filename='" + filename + "', filesize='" + filesize +"', ext='" + ext +"', savepath='" + savepath + "'" + " WHERE url='" + url +"'");
+					stmt.execute("UPDATE " + TABLE_NAME + " SET state='" + state + "',"
+							+ " filename='" + filename + "'," 
+							+ " filesize='" + filesize +"'," 
+							+ " ext='" + ext +"', " 
+							+ " savepath='" + savepath + "'," 
+							+ " totalTime='" + totalTime + "',"
+							+ " priority='"  + priority  + "',"
+							+ " WHERE url='" + url +"'");
 
 				} catch (SQLException e) {
 					logger.debug("stmt execute." + e.getLocalizedMessage());
@@ -151,12 +148,20 @@ public class H2DBService {
 		long filesize = context.getRemoteFilesize();
 		String savepath = context.getSavePath();
 		int state = context.getState().ordinal();
+		long totalTime = context.getTotalTime();
+		int priority = context.getPriority().ordinal();
 		if(url != null && !url.trim().equals("")){
 			Statement stmt;
 			try {
 				stmt = con.createStatement();
 				stmt.execute("UPDATE " + TABLE_NAME + " SET state='" + state + "', "
-						+"filename='" + filename + "', filesize='" + filesize +"', ext='" + ext +"', savepath='" + savepath + "'" + " WHERE url='" + url +"'");
+						+ " filename='" + filename + "'," 
+						+ " filesize='" + filesize +"'," 
+						+ " ext='" + ext +"'," 
+						+ " savepath='" + savepath + "'," 
+						+ " totalTime='" + totalTime + "',"
+						+ " priority='"  + priority  + "',"
+						+ " WHERE url='" + url +"'");
    		        stmt.close();
 			} catch (SQLException e) {
 				logger.debug("stmt close." + e.getLocalizedMessage());
@@ -174,8 +179,9 @@ public class H2DBService {
 		try 
 		{
 			Statement stmt = con.createStatement();	        
-	        stmt.execute("INSERT INTO " + TABLE_NAME  + " (url,createtime,state,filename) VALUES ('" + context.getURL() +"','" 
-	        		+ new Timestamp(System.currentTimeMillis()) +"','" + 0 + "','" + null + "')");	        
+	        stmt.execute("INSERT INTO " + TABLE_NAME  + " (url,createtime,state,filename,priority) VALUES ('" + context.getURL() +"','" 
+	        		+ new Timestamp(System.currentTimeMillis()) +"','" + DownloadState.WAIT.ordinal() + "','" + null + "','"  
+	        		+ DownloadPriority.NORMAL.ordinal() + "')");	        
 	        stmt.close();
 		} catch (SQLException e) {
 			logger.debug("stmt execute." + e.getLocalizedMessage());

@@ -4,7 +4,7 @@ import com.icesoft.tumblr.contexts.DownloadContext;
 import com.icesoft.utils.HttpGetUtils;
 
 public enum DownloadState{
-	WAIT("WAIT")
+	WAIT
 	{
 		@Override
 		public DownloadState execute(DownloadContext context) 
@@ -12,56 +12,56 @@ public enum DownloadState{
 			return NETWORK_QUERY;
 		}
 	},
-	NETWORK_QUERY("NETWORK_QUERY")
+	NETWORK_QUERY
 	{
 		@Override
 		public DownloadState execute(DownloadContext context)
 		{
 			return HttpGetUtils.networkQuery(context);
 		}
-	},LOCAL_QUERY("LOCAL_QUERY")
+	},LOCAL_QUERY
 	{
 		@Override
 		public DownloadState execute(DownloadContext context) 
 		{
 			return HttpGetUtils.localQuery(context);
 		}
-	},PAUSE("PAUSE")
+	},PAUSE
 	{
 		@Override
 		public DownloadState execute(DownloadContext context) 
 		{
 			return null;
 		}
-	},RESUME("RESUME")
+	},RESUME
 	{
 		@Override
 		public DownloadState execute(DownloadContext context) 
 		{
 			return HttpGetUtils.download(context,true);
 		}
-	},DOWNLOAD("DOWNLOAD")
+	},DOWNLOAD
 	{
 		@Override
 		public DownloadState execute(DownloadContext context) 
 		{
 			return HttpGetUtils.download(context,false);
 		}
-	},RECREATE("RECREATE")
+	},RECREATE
 	{
 		@Override
 		public DownloadState execute(DownloadContext context) 
 		{
 			return null;
 		}
-	},COMPLETE("COMPLETE")
+	},COMPLETE
 	{
 		@Override
 		public DownloadState execute(DownloadContext context) 
 		{
 			return null;
 		}
-	},EXCEPTION("EXCEPTION")
+	},EXCEPTION
 	{
 		@Override
 
@@ -70,14 +70,11 @@ public enum DownloadState{
 			return null;
 		}
 	};
-	private String nickname;
-	private DownloadState(String nickname)
-	{
-		this.nickname = nickname;
-	}
-	public String getNickname()
-	{
-		return this.nickname;
-	}
+    public static DownloadState valueOf(int ordinal) {
+        if (ordinal < 0 || ordinal >= values().length) {
+            throw new IndexOutOfBoundsException("Invalid ordinal");
+        }
+        return values()[ordinal];
+    }
 	public abstract DownloadState execute(DownloadContext context);
 }

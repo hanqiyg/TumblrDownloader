@@ -25,10 +25,11 @@ public class DownloadContext implements IContext{
 	private volatile boolean complete;	
 	private String  message;
 	
+	private DownloadState state;
 	private DownloadPriority priority;
 	
 	private volatile boolean run;
-	private DownloadState state;
+
 	public DownloadContext(String URL, DownloadState state, String savePath) {
 		this.URL = URL;
 		this.state = state;
@@ -36,17 +37,17 @@ public class DownloadContext implements IContext{
 		this.priority = DownloadPriority.NORMAL;
 	}
 	public DownloadContext(String url, String filename, long filesize, long time, int state,
-			String ext, String savepath) {
+			String ext, String savepath, long totalTime, int priority) {
 		this.URL = url;
 		this.filename = filename;
 		this.remoteFilesize.set(filesize);
 		this.createTime.set(time);
-		if(state >=0 && state < DownloadState.values().length)
-		{
-			this.state = DownloadState.values()[state];
-		}
+		this.state = DownloadState.valueOf(state);
+		this.priority = DownloadPriority.valueOf(priority);
 		this.ext = ext;
 		this.savePath = savepath;
+		this.totalTime.set(totalTime);
+
 	}
 	public void perform(){
 		if(state != null)
