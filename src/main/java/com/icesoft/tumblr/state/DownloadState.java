@@ -4,6 +4,14 @@ import com.icesoft.tumblr.contexts.DownloadContext;
 import com.icesoft.utils.HttpGetUtils;
 
 public enum DownloadState{
+	CREATE
+	{
+		@Override
+		public DownloadState execute(DownloadContext context) 
+		{
+			return WAIT;
+		}
+	},
 	WAIT
 	{
 		@Override

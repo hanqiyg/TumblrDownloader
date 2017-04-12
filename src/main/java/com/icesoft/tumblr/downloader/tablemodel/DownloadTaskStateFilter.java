@@ -13,7 +13,7 @@ public class DownloadTaskStateFilter extends RowFilter<DownloadModel, Object>{
 	@Override
 	public boolean include(javax.swing.RowFilter.Entry<? extends DownloadModel, ? extends Object> entry) {
 		DownloadModel model = entry.getModel();						
-		IContext task = model.getContexts(entry.getIdentifier());
+		IContext task = model.getContext(entry.getIdentifier());
 		if(task != null && task.getState() != null){
 			for(DownloadState s : states){
 				if(s.equals(task.getState())){

@@ -9,6 +9,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import com.icesoft.tumblr.state.interfaces.IContext;
+
 /**
  * @author canghailan
  * @datetime 2011-12-10 13:57:19
@@ -49,7 +51,7 @@ public class PriorityThreadPoolExecutor extends ThreadPoolExecutor {
     }
 
     protected class ComparableFutureTask<V>
-            extends FutureTask<V> implements Comparable<ComparableFutureTask<V>> {
+            extends FutureTask<V> implements Comparable<ComparableFutureTask<V>>,Contextable{
         private Object object;
 
         public ComparableFutureTask(Callable<V> callable) {
@@ -80,5 +82,36 @@ public class PriorityThreadPoolExecutor extends ThreadPoolExecutor {
             }
             return 0;
         }
+        
+		@Override
+		public IContext getContext() {
+			System.out.println("===============getContext===================");
+			if(object instanceof Contextable)
+			{
+				Contextable c = (Contextable) object;
+				return c.getContext();
+			}
+			return null;
+		}
+		@Override
+		public int hashCode() {
+			System.out.println("===============hashCode===================");
+			return this.getContext().getURL().hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) 
+		{
+			System.out.println("===============equals===================");
+			if(obj != null && obj instanceof IContext)
+			{
+				IContext c = (IContext) obj;
+				if(c.equals(this.getContext()))
+				{
+					return true;
+				}
+			}
+			return false;
+		}		
     }
 }

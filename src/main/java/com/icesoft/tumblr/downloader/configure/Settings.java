@@ -45,7 +45,7 @@ public class Settings {
 	public String getSaveLocation(){
 		if(save_location == null)
 		{
-			save_location = prefs.get("Save.Location", "d:/tumblr");
+			save_location = prefs.get("Save.Location", "./");
 		}
 		return save_location;
 	}

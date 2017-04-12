@@ -73,13 +73,16 @@ public class H2DBService {
 	        while(rs.next()){
 	        	i++;
 	        	System.out.println("load task:[" 	+ i +"] " 
-	        			   + "url:"			+ rs.getString("url") 
+	        			   + " url:"			+ rs.getString("url") 
 	        			   + " time:" 		+ rs.getTimestamp("createtime")
-	        			   + "state:" 		+ rs.getInt("state")
-	        			   + "filename:" 	+ rs.getString("filename")
-	        			   + "filesize"  	+ rs.getLong("filesize")
-	        			   + "ext:" 		+ rs.getString("ext")
-	        			   + "savepath:" 	+ rs.getString("savepath"));
+	        			   + " state:" 		+ rs.getInt("state")
+	        			   + " filename:" 	+ rs.getString("filename")
+	        			   + " filesize"  	+ rs.getLong("filesize")
+	        			   + " ext:" 		+ rs.getString("ext")
+	        			   + " savepath:" 	+ rs.getString("savepath")
+	        			   + " totalTime:" 	+ rs.getLong("totalTime")
+	        			   + " priority:" 	+ rs.getInt("priority")
+	        			   );
 	        	String url = rs.getString("url");
 	        	Timestamp time = rs.getTimestamp("createtime");
 	        	int state = rs.getInt("state");
@@ -122,7 +125,7 @@ public class H2DBService {
 							+ " ext='" + ext +"', " 
 							+ " savepath='" + savepath + "'," 
 							+ " totalTime='" + totalTime + "',"
-							+ " priority='"  + priority  + "',"
+							+ " priority='"  + priority  + "' "
 							+ " WHERE url='" + url +"'");
 
 				} catch (SQLException e) {

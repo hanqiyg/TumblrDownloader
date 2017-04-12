@@ -1,6 +1,10 @@
 package com.icesoft.tumblr.downloader.tablemodel;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import javax.swing.table.AbstractTableModel;
 
 import com.icesoft.tumblr.downloader.datamodel.ProgressObject;
@@ -80,7 +84,7 @@ public class DownloadModel extends AbstractTableModel {
 	}
 	@Override
 	public Object getValueAt(int row, int col) {
-		IContext context = getContexts(row);
+		IContext context = getContext(row);
 		switch(ColName.values()[col])
 		{
 			case MESSAGE:		return context.getMessage();
@@ -97,7 +101,7 @@ public class DownloadModel extends AbstractTableModel {
 			default:			return null;
 		}		
 	}
-	public IContext getContexts(Object o){
+	public IContext getContext(Object o){
 		if(o instanceof Integer){
 			int i = (int) o;
 			if(i >=0 && i < DownloadManager.getInstance().getContexts().size())
@@ -106,5 +110,16 @@ public class DownloadModel extends AbstractTableModel {
 			}
 		}
 		return null;
+	}
+	public Map<Integer,IContext> getContexts(int[] selections)
+	{
+		Map<Integer,IContext> map = new HashMap<Integer,IContext>();
+		for(int i : selections){
+			if(i >=0 && i < DownloadManager.getInstance().getContexts().size())
+			{
+				map.put(i, DownloadManager.getInstance().getContexts().get(i));
+			}
+		}
+		return map;
 	}
 }

@@ -42,7 +42,7 @@ public class DownloadContext implements IContext{
 		this.filename = filename;
 		this.remoteFilesize.set(filesize);
 		this.createTime.set(time);
-		this.state = DownloadState.valueOf(state);
+		this.state = 	DownloadState.valueOf(state);
 		this.priority = DownloadPriority.valueOf(priority);
 		this.ext = ext;
 		this.savePath = savepath;
@@ -164,6 +164,11 @@ public class DownloadContext implements IContext{
 	public synchronized void setState(DownloadState state) {
 		this.state = state;
 	}
+	
+	@Override
+	public int hashCode() {
+		return URL.hashCode();
+	}
 	@Override
 	public boolean equals(Object obj) {
 		if(obj != null && obj instanceof IContext)
@@ -184,4 +189,25 @@ public class DownloadContext implements IContext{
 	public synchronized DownloadPriority getPriority() {
 		return this.priority;
 	}
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("Context START: [" + URL + "]\n");
+		sb.append(" savePath:" + savePath);
+		sb.append(" filename:" + filename);
+		sb.append(" ext:" + ext);
+		sb.append(" remoteFilesize:" + remoteFilesize);
+		sb.append(" localFilesize:" + localFilesize);
+		sb.append(" createTime:" + createTime);
+		sb.append(" totalTime" + totalTime);
+		sb.append(" currentSpeed:" + currentSpeed);
+		sb.append(" complete:" + complete);	
+		sb.append(" message:" + message);
+		sb.append(" state:" + state);
+		sb.append(" priority:" + priority);
+		sb.append(" run:" + run);
+		sb.append("\n");
+		sb.append("Context END  : [" + URL + "]");
+		return sb.toString();
+	}	
 }

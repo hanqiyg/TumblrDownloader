@@ -9,7 +9,7 @@ public class DownloadActiveFilter  extends RowFilter<DownloadModel, Object>{
 	@Override
 	public boolean include(javax.swing.RowFilter.Entry<? extends DownloadModel, ? extends Object> entry) {
 		DownloadModel model = entry.getModel();						
-		IContext context = model.getContexts(entry.getIdentifier());
+		IContext context = model.getContext(entry.getIdentifier());
 		if(context != null && context.isRun()){
 			return true;
 		}

@@ -2,10 +2,11 @@ package com.icesoft.tumblr.downloader.workers;
 
 import java.util.concurrent.Callable;
 
+import com.icesoft.tumblr.executors.Contextable;
 import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
 
-public class HttpGetWorker implements Callable<Void>, Comparable<HttpGetWorker> 
+public class HttpGetWorker implements Callable<Void>, Comparable<HttpGetWorker>,Contextable
 {
 	private IContext context;
 	public HttpGetWorker(IContext context)

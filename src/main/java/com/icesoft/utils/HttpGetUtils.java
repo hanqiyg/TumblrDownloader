@@ -152,7 +152,8 @@ public class HttpGetUtils
 					}
 					if(downloadContext.getRemoteFilesize() < downloadContext.getLocalFilesize())
 					{
-						downloadContext.setMessage("Local File Exception.[LOCAL:"+ downloadContext.getLocalFilesize() +" Remote:" + downloadContext.getRemoteFilesize() + "]");
+						downloadContext.setMessage("Local File Exception.[LOCAL:"+ UnitUtils.getFormatSize(downloadContext.getLocalFilesize()) 
+								+" Remote:" + UnitUtils.getFormatSize(downloadContext.getRemoteFilesize()) + "]");
 						logger.debug("return DownloadState.EXCEPTION");
 						return DownloadState.EXCEPTION;
 					}
@@ -167,7 +168,8 @@ public class HttpGetUtils
 					}
 					else
 					{
-						downloadContext.setMessage("Local File Exception.[LOCAL:"+ downloadContext.getLocalFilesize() +" Remote:" + downloadContext.getRemoteFilesize() + "]");
+						downloadContext.setMessage("Local File Exception.[LOCAL:"+ UnitUtils.getFormatSize(downloadContext.getLocalFilesize()) 
+							+" Remote:" + UnitUtils.getFormatSize(downloadContext.getRemoteFilesize()) + "]");
 						logger.debug("return DownloadState.EXCEPTION");
 						return DownloadState.EXCEPTION;
 					}

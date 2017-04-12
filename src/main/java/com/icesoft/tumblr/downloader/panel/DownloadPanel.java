@@ -10,10 +10,13 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -31,8 +34,12 @@ import com.icesoft.tumblr.downloader.tablemodel.DateCellRenderer;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadActiveFilter;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadModel;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadModel.ColName;
+import com.icesoft.tumblr.downloader.tablemodel.DownloadPriorityRenderer;
+import com.icesoft.tumblr.downloader.tablemodel.DownloadStateRenderer;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadTaskStateFilter;
 import com.icesoft.tumblr.downloader.tablemodel.ProgressCellRenderer;
+import com.icesoft.tumblr.downloader.ui.utils.MenuUtils;
+import com.icesoft.tumblr.state.DownloadPriority;
 import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
 
@@ -58,6 +65,8 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		table.setModel(model);
 		table.getColumn(ColName.PROGRESS.toString()).setCellRenderer(new ProgressCellRenderer());
 		table.getColumn(ColName.CREATETIME.toString()).setCellRenderer(new DateCellRenderer());
+		table.getColumn(ColName.PRIORITY.toString()).setCellRenderer(new DownloadPriorityRenderer());
+		table.getColumn(ColName.STATUS.toString()).setCellRenderer(new DownloadStateRenderer());
 		table.setRowSorter(sorter);
 		table.addMouseListener(new MouseAdapter(){
 			@Override
@@ -100,6 +109,15 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 			}
 		});
 		plControl.add(btnDownloadAll);
+		
+		JButton btnStopAll = new JButton("StopAll");
+		btnActive.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				sorter.setRowFilter(null);
+				DownloadManager.getInstance().stopAll();
+			}
+		});
+		plControl.add(btnStopAll);
 		
 		GridBagConstraints gbc_plControl = new GridBagConstraints();
 		gbc_plControl.insets = new Insets(5, 5, 5, 5);
@@ -189,24 +207,37 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 	           int focusedRowIndex = table.rowAtPoint(e.getPoint());  
 	           if (focusedRowIndex == -1) {  
 	               return;  
-	           }  
-	           table.setRowSelectionInterval(focusedRowIndex, focusedRowIndex);
-	           IContext task = model.getContexts(focusedRowIndex);
-	           if(task != null){
-	        	   JPopupMenu menu = getRightMouseMenu(task);
+	           }
+	           boolean isSelected = false;
+	           int[] selections = table.getSelectedRows();
+	           for(int i : selections){
+	        	   if(i == focusedRowIndex)
+	        	   {
+	        		   isSelected = true; 
+	        	   }
+	           }
+	           if(!isSelected)
+	           {
+		           table.setRowSelectionInterval(focusedRowIndex, focusedRowIndex);
+	           }
+	           selections = table.getSelectedRows();
+	           Map<Integer,IContext> contexts = model.getContexts(selections);
+	           if(contexts != null && contexts.size() > 0){
+	        	   JPopupMenu menu = MenuUtils.getDownloadPanelRightButtonMenu(contexts, model);
 		           menu.show(table, e.getX(), e.getY());  
 	           } 
 	       } 
 	}
-	private JPopupMenu getRightMouseMenu(IContext task){
+	private JPopupMenu getRightMouseMenu(IContext task, int focusedRowIndex){
 		JPopupMenu rightMouseMenu = new JPopupMenu();
-		rightMouseMenu.add(getOpenFolderMenuItem(task));	
-		rightMouseMenu.add(getStopMenuItem(task));
-		rightMouseMenu.add(getDownloadMenuItem(task));
+		rightMouseMenu.add(getOpenFolderMenuItem(task,focusedRowIndex));	
+		rightMouseMenu.add(getStopMenuItem(task,focusedRowIndex));
+		rightMouseMenu.add(getDownloadMenuItem(task,focusedRowIndex));
+		rightMouseMenu.add(getPriorityMenuItem(task,focusedRowIndex));
 		return rightMouseMenu; 
 	}
 
-	public JMenuItem getOpenFolderMenuItem(IContext context){
+	public JMenuItem getOpenFolderMenuItem(IContext context, int focusedRowIndex){
 		JMenuItem item = new JMenuItem("Open Folder");  
 		item.addActionListener(new ActionListener() {  
             public void actionPerformed(ActionEvent evt) {  
@@ -230,7 +261,31 @@ public class DownloadPanel extends JPanel implements IUpdatable{
         }); 
         return item;
 	}
-	public JMenuItem getStopMenuItem(IContext context){
+	public JMenu getPriorityMenuItem(IContext context, int focusedRowIndex){
+		JMenu item = new JMenu("Priority");
+		DownloadPriority priority = context.getPriority();
+		for(DownloadPriority p : DownloadPriority.values())
+		{
+			if(p.equals(priority))
+			{
+				JMenuItem sub = new JMenuItem(p.name());
+				item.add(sub);
+			}
+			else
+			{
+				JMenuItem sub = new JMenuItem(p.name());
+				sub.addActionListener(new ActionListener() {  
+		            public void actionPerformed(ActionEvent evt) {  
+		            	context.setPriority(p);
+		            	model.fireTableRowsUpdated(focusedRowIndex, focusedRowIndex);
+		            }
+		        });
+				item.add(sub);
+			}
+		}
+		return item;
+	}
+	public JMenuItem getStopMenuItem(IContext context, int focusedRowIndex){
 		JMenuItem item = new JMenuItem("Stop");  
 		item.addActionListener(new ActionListener() {  
             public void actionPerformed(ActionEvent evt) {  
@@ -239,7 +294,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
         }); 
         return item;
 	}
-	public JMenuItem getDownloadMenuItem(IContext context){
+	public JMenuItem getDownloadMenuItem(IContext context, int focusedRowIndex){
 		JMenuItem item = new JMenuItem("Download");  
 		item.addActionListener(new ActionListener() {  
             public void actionPerformed(ActionEvent evt) {  

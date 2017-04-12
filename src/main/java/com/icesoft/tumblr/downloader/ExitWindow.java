@@ -122,7 +122,7 @@ public class ExitWindow extends JDialog {
 				logger.debug("Shutdown:" + "QueryManager@[" + new Date().toString()+"]");
 				QueryManager.getInstance().stopQuery();	
 				logger.debug("Shutdown:" + "DownloadManager@[" + new Date().toString()+"]");
-				DownloadManager.getInstance().stopAll();
+				DownloadManager.getInstance().terminate();
 				logger.debug("Shutdown:" + "HttpClientConnectionManager@[" + new Date().toString()+"]");
 				HttpClientConnectionManager.getInstance().shutdown();	
 				logger.debug("Shutdown:" + "H2DBService@[" + new Date().toString()+"]");

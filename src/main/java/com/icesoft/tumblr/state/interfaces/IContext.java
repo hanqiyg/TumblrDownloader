@@ -35,5 +35,6 @@ public interface IContext{
 	public DownloadState getState();
 	public void setState(DownloadState state);
 	public void setPriority(DownloadPriority priority);
-	public DownloadPriority getPriority();		
+	public DownloadPriority getPriority();
+	public boolean equals(Object obj);
 }
