@@ -190,4 +190,14 @@ public class H2DBService {
 			logger.debug("stmt execute." + e.getLocalizedMessage());
 		} 
 	}
+	public void delete(IContext context) {
+		try 
+		{
+			Statement stmt = con.createStatement();	        
+	        stmt.execute("DELETE FROM " + TABLE_NAME  + " WHERE url='" + context.getURL() +"'");        
+	        stmt.close();
+		} catch (SQLException e) {
+			logger.debug("stmt execute." + e.getLocalizedMessage());
+		} 
+	}
 }

@@ -1,5 +1,6 @@
 package com.icesoft.tumblr.downloader.managers;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -12,9 +13,11 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
+import com.icesoft.tumblr.contexts.DownloadContext;
+import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.downloader.service.H2DBService;
 import com.icesoft.tumblr.downloader.workers.HttpGetWorker;
-import com.icesoft.tumblr.executors.Contextable;
+import com.icesoft.tumblr.executors.Contextful;
 import com.icesoft.tumblr.executors.PriorityThreadPoolExecutor;
 import com.icesoft.tumblr.handlers.RejectedExecutionHandlerImpl;
 import com.icesoft.tumblr.state.DownloadState;
@@ -38,26 +41,74 @@ public class DownloadManager {
 	public static DownloadManager getInstance(){
 		return instance;
 	}
-	public void stop(IContext context) {
+	public void stopSingleTask(IContext context) {
 		if(context.isRun())
 		{
 			context.setRun(false);
+			logger.debug("stop [" + context.getURL() + "] From Running.");
 		}
-		else if(queue.contains(context))
+		else if(removeContextFromQueue(context))
 		{
-			System.err.println(queue.remove(context));
-		}else{
-			logger.debug("not in queue");
+			context.setState(DownloadState.PAUSE);
+			logger.debug("Remove [" + context.getURL() + "] From Queue.");
+		}else
+		{
+			logger.debug("Context [" + context.getURL() + "] is not in Queue.");
 		}
 	}
 
-	public void stopAll(){
-		queue.clear();
+	public boolean removeContextFromQueue(IContext context)
+	{
+		Object[] objs = pool.getQueue().toArray();
+		System.out.println(objs.length);
+		for(Object o : objs)
+		{
+			if(o instanceof Contextful)
+			{
+				System.out.println("Contextful");
+				Contextful w = (Contextful) o;
+				if(w.getContext().equals(context))
+				{
+					System.out.println("Contextful equals");
+					boolean a = pool.getQueue().remove(o);
+					logger.debug("Context [" + context.getURL() + "] remove from queue." + a);
+					return a;
+				}
+			}
+		}
+		return false;
+	}
+	public boolean isContextInQueue(IContext context)
+	{
+		Object[] objs = pool.getQueue().toArray();
+		for(Object o : objs)
+		{
+			if(o instanceof Contextful)
+			{
+				Contextful w = (Contextful) o;
+				if(w.getContext().equals(context))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public void stopAllTask(){
+		pool.getQueue().clear();
 		synchronized(contexts)
 		{
 			for(IContext c : contexts)
 			{
 				c.setRun(false);
+				if(
+						!c.getState().equals(DownloadState.COMPLETE)
+					&&	!c.getState().equals(DownloadState.EXCEPTION)
+				)
+				{
+					c.setState(DownloadState.PAUSE);
+				}
 			}
 		}
 		saveTasks(contexts);
@@ -80,9 +131,7 @@ public class DownloadManager {
 			pool.shutdownNow();
 		}		
 	}
-	public void stopNow(){
-		pool.shutdownNow();
-	}
+
 	public ThreadPoolExecutor getPool(){
 		return pool;
 	}
@@ -108,66 +157,81 @@ public class DownloadManager {
 			{
 				if(!contexts.contains(context))
 				{
-					if(
-							!context.getState().equals(DownloadState.EXCEPTION)
-						&&	!context.getState().equals(DownloadState.COMPLETE)
-					)
-					{
-						context.setState(DownloadState.CREATE);
-						contexts.add(context);
-					}
+					context.setState(DownloadState.CREATE);
+					contexts.add(context);
 				}
 			}
 		}
 	}
-	public void downloadResumeSingleTask(IContext context)
+	
+	public void startSingleTask(IContext context)
 	{
-		synchronized(contexts)
-		{
-			HttpGetWorker exec = null;
-			if(!context.isRun() && contexts.contains(context) && !queue.contains(context)){
-				switch(context.getState())
-				{
-					case CREATE:			{logger.debug("Context: " + context.getURL() + " put into run.");
-											exec = new HttpGetWorker(context);
-											pool.submit(exec);}
-						break;
-					case COMPLETE:			{logger.debug("Context: " + context.getURL() + " is already complete.");}
-						break;
-					case DOWNLOAD:			{logger.debug("Context: " + context.getURL() + " is downloading.");}
-						break;
-					case EXCEPTION:			{logger.debug("Context: " + context.getURL() + " is download exception, retry.");
+		HttpGetWorker exec = null;
+		if(!context.isRun() && !isContextInQueue(context)){
+			switch(context.getState())
+			{
+				case CREATE:			{	
+											logger.debug("Context: " + context.getURL() + " put into run.");
 											context.setState(DownloadState.WAIT);
 											exec = new HttpGetWorker(context);
-											pool.submit(exec);}
-						break;
-					case LOCAL_QUERY:		{logger.debug("Context: " + context.getURL() + " is downloading.");}
-						break;
-					case NETWORK_QUERY:		{logger.debug("Context: " + context.getURL() + " is downloading.");}
-						break;
-					case PAUSE:				{logger.debug("Context: " + context.getURL() + " is pause, resuming.");
-											context.setState(DownloadState.RESUME);
+											pool.submit(exec);
+										}
+					break;
+				case COMPLETE:			{
+											logger.debug("Context: " + context.getURL() + " is already complete.");
+										}
+					break;
+				case DOWNLOAD:			{
+											logger.debug("Context: " + context.getURL() + " is downloading.");
+										}
+					break;
+				case EXCEPTION:			{
+											logger.debug("Context: " + context.getURL() + " is download exception, retry.");
+											context.setState(DownloadState.WAIT);
 											exec = new HttpGetWorker(context);
-											pool.submit(exec);}
-						break;
-					case RECREATE:			{logger.debug("Context: " + context.getURL() + " is pause, resuming.");
+											pool.submit(exec);
+										}
+					break;
+				case LOCAL_QUERY:		{
+											logger.debug("Context: " + context.getURL() + " is downloading.");
+										}
+					break;
+				case NETWORK_QUERY:		{
+											logger.debug("Context: " + context.getURL() + " is downloading.");
+										}
+					break;
+				case PAUSE:				{
+											logger.debug("Context: " + context.getURL() + " is pause, resuming.");
+											context.setState(DownloadState.WAIT);
+											exec = new HttpGetWorker(context);
+											pool.submit(exec);
+										}
+					break;
+				case RECREATE:			{
+											logger.debug("Context: " + context.getURL() + " is pause, resuming.");
 											context = recreate(context);
 											context.setState(DownloadState.WAIT);
 											exec = new HttpGetWorker(context);
-											pool.submit(exec);}
-						break;
-					case RESUME:			{logger.debug("Context: " + context.getURL() + " is pause, resuming.");
-											context.setState(DownloadState.RESUME);
+											pool.submit(exec);
+										}
+					break;
+				case RESUME:			{
+											logger.debug("Context: " + context.getURL() + " is pause, resuming.");
+											context.setState(DownloadState.WAIT);
 											exec = new HttpGetWorker(context);
-											pool.submit(exec);}
-						break;
-					case WAIT:				{logger.debug("Context: " + context.getURL() + " is already complete.");}
-						break;
-					default:				{logger.debug("Context: " + context.getURL() + " is under unknow status.");}
-						break;	
-				}
-			}			
-		}
+											pool.submit(exec);
+										}
+					break;
+				case WAIT:				{
+											logger.debug("Context: " + context.getURL() + " is already in waiting.");
+										}
+					break;
+				default:				{
+											logger.debug("Context: " + context.getURL() + " is under unknow status.");
+										}
+					break;	
+			}
+		}			
 	}
 
 
@@ -183,25 +247,16 @@ public class DownloadManager {
 			while(it.hasNext())
 			{
 				IContext context = it.next();
-				DownloadState state = context.getState();
-				if
-				(
-						!state.equals(DownloadState.COMPLETE) 
-					&&	!state.equals(DownloadState.EXCEPTION)
-				)
-				{
-					HttpGetWorker exec = new HttpGetWorker(context);
-					pool.submit(exec);	
-				}
-			}	
+				startSingleTask(context);
+			}
 		}
+	}
+	public void addNewTask(String url,String savePath) {
+		DownloadContext c = new DownloadContext(url,DownloadState.CREATE, savePath);
+		addNewTask(c);
 	}
 
 	public void addNewTask(IContext context) {
-		if(context.isRun()){
-			logger.debug("Context:[" + context.getURL() +"] is already in running.");
-			return;
-		}
 		synchronized(contexts)
 		{
 			if(contexts.contains(context))
@@ -214,9 +269,30 @@ public class DownloadManager {
 			}
 		}
 		H2DBService.getInstance().initTask(context);
-
 		HttpGetWorker exec = new HttpGetWorker(context);
 		pool.submit(exec);
+	}
+	public void removeTask(IContext context,boolean removeFile){
+		synchronized(contexts)
+		{
+			if(contexts.contains(context))
+			{
+				if(context.isRun()){
+					context.setRun(false);
+				}
+				contexts.remove(context);
+				H2DBService.getInstance().delete(context);
+			}
+		}
+		if(removeFile && context.getAbsolutePath() != null){
+			deleteFile(context.getAbsolutePath());
+		}
+	}
+	private void deleteFile(String absolutePath) {
+		File file = new File(absolutePath);
+		if(file.exists() && file.isFile()){
+			file.delete();
+		}		
 	}
 	public List<IContext> getContexts() {
 		return contexts;

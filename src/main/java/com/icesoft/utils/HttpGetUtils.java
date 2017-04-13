@@ -33,6 +33,10 @@ public class HttpGetUtils
 				downloadContext.setRemoteFilesize(response.getEntity().getContentLength());
 				downloadContext.setFilename(StringUtils.getFilename(response, downloadContext.getURL()));
 				downloadContext.setExt(MineType.getInstance().getExtensionFromMineType(response.getEntity().getContentType().getValue()));
+		        if(!downloadContext.isRun()){
+					logger.debug("return DownloadState.PAUSE");
+		        	return DownloadState.PAUSE;
+		        }
 				logger.debug("return DownloadState.LOCAL_QUERY");
 				return DownloadState.LOCAL_QUERY;
 			}
@@ -75,6 +79,10 @@ public class HttpGetUtils
 			{
 				downloadContext.setLocalFilesize(file.length());
 				downloadContext.setMessage("download complete.");
+		        if(!downloadContext.isRun()){
+					logger.debug("return DownloadState.PAUSE");
+		        	return DownloadState.PAUSE;
+		        }
 				logger.debug("return DownloadState.COMPLETE");
 				return DownloadState.COMPLETE;
 			}
@@ -89,6 +97,10 @@ public class HttpGetUtils
 			{
 				downloadContext.setLocalFilesize(0);
 				downloadContext.setMessage("continue download at " + file.length() + "of" + downloadContext.getRemoteFilesize());
+		        if(!downloadContext.isRun()){
+					logger.debug("return DownloadState.PAUSE");
+		        	return DownloadState.PAUSE;
+		        }
 				logger.debug("return DownloadState.RESUME");
 				return DownloadState.RESUME;
 			}

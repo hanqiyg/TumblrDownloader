@@ -7,7 +7,6 @@ import javax.swing.border.EmptyBorder;
 
 import org.apache.log4j.Logger;
 
-import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
 import com.icesoft.tumblr.downloader.managers.QueryManager;
@@ -17,15 +16,8 @@ import com.icesoft.tumblr.downloader.service.H2DBService;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import java.awt.Rectangle;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Date;
-import java.awt.GridLayout;
 import javax.swing.JLabel;
-import javax.swing.JProgressBar;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.FlowLayout;
@@ -88,11 +80,6 @@ public class ExitWindow extends JDialog {
 				JButton btnExit = new JButton("Force Close");
 				btnExit.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						DownloadManager.getInstance().stopNow();
-						if(exitThread != null && !exitThread.isAlive())
-						{
-							exitThread.interrupt();
-						}
 						System.exit(0);
 					}
 				});

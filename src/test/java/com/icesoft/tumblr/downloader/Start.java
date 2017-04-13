@@ -3,6 +3,7 @@ package com.icesoft.tumblr.downloader;
 import org.junit.Test;
 
 import com.icesoft.tumblr.downloader.service.H2DBService;
+import com.icesoft.tumblr.state.DownloadPriority;
 
 public class Start {
 	@Test
@@ -46,6 +47,14 @@ public class Start {
 		sbr.toString();
 		long end2   = System.currentTimeMillis();
 		System.err.println("StringBuilder" + " takes " + (end2 - begin2) + "ms");		//7ms
+	}
+	@Test
+	public void printPriority()
+	{
+		for(DownloadPriority p : DownloadPriority.values())
+		{
+			System.out.println(p.name() + " : " + p.ordinal());
+		}
 	}
 }
 

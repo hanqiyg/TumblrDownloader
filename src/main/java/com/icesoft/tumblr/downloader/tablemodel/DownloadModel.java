@@ -1,18 +1,16 @@
 package com.icesoft.tumblr.downloader.tablemodel;
 
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 import javax.swing.table.AbstractTableModel;
 
 import com.icesoft.tumblr.downloader.datamodel.ProgressObject;
 import com.icesoft.tumblr.downloader.datamodel.SizeObject;
 import com.icesoft.tumblr.downloader.datamodel.SpeedObject;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
-import com.icesoft.tumblr.downloader.workers.DownloadTask;
 import com.icesoft.tumblr.state.DownloadPriority;
+import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
 
 public class DownloadModel extends AbstractTableModel {
@@ -23,7 +21,7 @@ public class DownloadModel extends AbstractTableModel {
 		NAME(1,"Name",String.class),
 		URL(2,"URL",String.class),
 		PRIORITY(3,"Priority",DownloadPriority.class),
-		STATUS(4,"Status",DownloadTask.STATE.class),
+		STATUS(4,"Status",DownloadState.class),
 		PROGRESS(5,"Progress",ProgressObject.class),
 		SPEED(6,"Speed",SpeedObject.class),
 		CREATETIME(7,"Create Time",Date.class),
@@ -111,15 +109,15 @@ public class DownloadModel extends AbstractTableModel {
 		}
 		return null;
 	}
-	public Map<Integer,IContext> getContexts(int[] selections)
+	public List<IContext> getContexts(int[] selections)
 	{
-		Map<Integer,IContext> map = new HashMap<Integer,IContext>();
+		List<IContext> list = new ArrayList<IContext>();
 		for(int i : selections){
 			if(i >=0 && i < DownloadManager.getInstance().getContexts().size())
 			{
-				map.put(i, DownloadManager.getInstance().getContexts().get(i));
+				list.add(DownloadManager.getInstance().getContexts().get(i));
 			}
 		}
-		return map;
+		return list;
 	}
 }

@@ -50,8 +50,8 @@ public class PriorityThreadPoolExecutor extends ThreadPoolExecutor {
         return new ComparableFutureTask<>(callable);
     }
 
-    protected class ComparableFutureTask<V>
-            extends FutureTask<V> implements Comparable<ComparableFutureTask<V>>,Contextable{
+    public class ComparableFutureTask<V>
+            extends FutureTask<V> implements Comparable<ComparableFutureTask<V>>,Contextful{
         private Object object;
 
         public ComparableFutureTask(Callable<V> callable) {
@@ -64,7 +64,6 @@ public class PriorityThreadPoolExecutor extends ThreadPoolExecutor {
             object = runnable;
         }
 
-        @SuppressWarnings("rawtypes")
 		@Override
         public int compareTo(ComparableFutureTask<V> o) {
             if (this == o) {
@@ -73,44 +72,33 @@ public class PriorityThreadPoolExecutor extends ThreadPoolExecutor {
             if (o == null) {
                 return -1; // high priority
             }
-            if (object != null && o.object != null) {
-                if (object.getClass().equals(o.object.getClass())) {
-                    if (object instanceof Comparable) {
-                        return ((Comparable) object).compareTo(o.object);
-                    }
-                }
+            if(o.getContext() == null || this.getContext() == null || o.getContext().getPriority() == null || this.getContext().getPriority() == null)
+            {
+
+            	return 0;
+            			
+            }else{
+            	return  this.getContext().getPriority().ordinal() > o.getContext().getPriority().ordinal() ? 1
+            			: this.getContext().getPriority().ordinal() < o.getContext().getPriority().ordinal() ? -1 : 0;
             }
-            return 0;
         }
         
 		@Override
 		public IContext getContext() {
-			System.out.println("===============getContext===================");
-			if(object instanceof Contextable)
+			if(object instanceof Contextful)
 			{
-				Contextable c = (Contextable) object;
+				Contextful c = (Contextful) object;
 				return c.getContext();
 			}
 			return null;
 		}
-		@Override
-		public int hashCode() {
-			System.out.println("===============hashCode===================");
-			return this.getContext().getURL().hashCode();
-		}
 
-		@Override
-		public boolean equals(Object obj) 
+		public boolean contextEquals(IContext context) 
 		{
-			System.out.println("===============equals===================");
-			if(obj != null && obj instanceof IContext)
+			if(context.equals(this.getContext()))
 			{
-				IContext c = (IContext) obj;
-				if(c.equals(this.getContext()))
-				{
-					return true;
-				}
-			}
+				return true;
+			}			
 			return false;
 		}		
     }
