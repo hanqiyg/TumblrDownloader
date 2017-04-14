@@ -4,7 +4,6 @@ import com.icesoft.tumblr.state.DownloadPriority;
 import com.icesoft.tumblr.state.DownloadState;
 
 public interface IContext{
-	public void perform();
 	public String getURL();
 	public void setURL(String uRL);
 	public String getSavePath();

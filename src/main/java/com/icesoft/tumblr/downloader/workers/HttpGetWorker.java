@@ -20,9 +20,16 @@ public class HttpGetWorker implements Callable<Void>, Comparable<HttpGetWorker>,
 		context.setRun(true);
 		while(context.isRun()
 				&& !context.getState().equals(DownloadState.COMPLETE)
+				&& !context.getState().equals(DownloadState.PAUSE)
+				&& !context.getState().equals(DownloadState.EXCEPTION)
 			)
 		{
-			context.perform();
+			DownloadState s = context.getState().execute(context);
+			if(s != null){
+				context.setState(s);
+			}else{
+				break;
+			}
 		}
 		context.setRun(false);
 		return null;

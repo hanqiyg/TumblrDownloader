@@ -207,14 +207,6 @@ public class DownloadManager {
 											pool.submit(exec);
 										}
 					break;
-				case RECREATE:			{
-											logger.debug("Context: " + context.getURL() + " is pause, resuming.");
-											context = recreate(context);
-											context.setState(DownloadState.WAIT);
-											exec = new HttpGetWorker(context);
-											pool.submit(exec);
-										}
-					break;
 				case RESUME:			{
 											logger.debug("Context: " + context.getURL() + " is pause, resuming.");
 											context.setState(DownloadState.WAIT);
@@ -234,11 +226,6 @@ public class DownloadManager {
 		}			
 	}
 
-
-	private IContext recreate(IContext context) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 	public void downloadResumeAllTasks()
 	{
 		synchronized(contexts)
@@ -247,7 +234,10 @@ public class DownloadManager {
 			while(it.hasNext())
 			{
 				IContext context = it.next();
-				startSingleTask(context);
+				if(!context.getState().equals(DownloadState.COMPLETE))
+				{
+					startSingleTask(context);
+				}
 			}
 		}
 	}
@@ -286,6 +276,25 @@ public class DownloadManager {
 		}
 		if(removeFile && context.getAbsolutePath() != null){
 			deleteFile(context.getAbsolutePath());
+		}
+	}
+	public void removeAllTask(boolean removeFile){
+		synchronized(contexts)
+		{
+			Iterator<IContext> it = contexts.iterator();
+			while(it.hasNext())
+			{
+				IContext context = it.next();
+				if(context.isRun())
+				{
+					context.setRun(false);
+				}
+				it.remove();
+				H2DBService.getInstance().delete(context);
+				if(removeFile && context.getAbsolutePath() != null){
+					deleteFile(context.getAbsolutePath());
+				}
+			}
 		}
 	}
 	private void deleteFile(String absolutePath) {

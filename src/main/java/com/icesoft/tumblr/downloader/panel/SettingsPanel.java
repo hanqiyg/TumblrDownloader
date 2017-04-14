@@ -246,6 +246,11 @@ public class SettingsPanel extends JPanel {
 		plPathSelect.setLayout(gbl_plPathSelect);
 		
 		tfPath = new JTextField();
+		if(Settings.getInstance().getSaveLocation() != null){
+			String path = Settings.getInstance().getSaveLocation();
+			File file = new File(path);
+			tfPath.setText(file.getAbsolutePath());
+		}
 		tfPath.setEditable(true);
 		GridBagConstraints gbc_tfPath = new GridBagConstraints();
 		gbc_tfPath.fill = GridBagConstraints.HORIZONTAL;

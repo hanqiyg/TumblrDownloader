@@ -1,13 +1,14 @@
 package com.icesoft.tumblr.state;
 
 import com.icesoft.tumblr.contexts.DownloadContext;
+import com.icesoft.tumblr.state.interfaces.IContext;
 import com.icesoft.utils.HttpGetUtils;
 
 public enum DownloadState{
 	CREATE
 	{
 		@Override
-		public DownloadState execute(DownloadContext context) 
+		public DownloadState execute(IContext context) 
 		{
 			return WAIT;
 		}
@@ -15,7 +16,7 @@ public enum DownloadState{
 	WAIT
 	{
 		@Override
-		public DownloadState execute(DownloadContext context) 
+		public DownloadState execute(IContext context) 
 		{
 			return NETWORK_QUERY;
 		}
@@ -23,49 +24,42 @@ public enum DownloadState{
 	NETWORK_QUERY
 	{
 		@Override
-		public DownloadState execute(DownloadContext context)
+		public DownloadState execute(IContext context)
 		{
 			return HttpGetUtils.networkQuery(context);
 		}
 	},LOCAL_QUERY
 	{
 		@Override
-		public DownloadState execute(DownloadContext context) 
+		public DownloadState execute(IContext context) 
 		{
 			return HttpGetUtils.localQuery(context);
 		}
 	},PAUSE
 	{
 		@Override
-		public DownloadState execute(DownloadContext context) 
+		public DownloadState execute(IContext context) 
 		{
 			return null;
 		}
 	},RESUME
 	{
 		@Override
-		public DownloadState execute(DownloadContext context) 
+		public DownloadState execute(IContext context) 
 		{
 			return HttpGetUtils.download(context,true);
 		}
 	},DOWNLOAD
 	{
 		@Override
-		public DownloadState execute(DownloadContext context) 
+		public DownloadState execute(IContext context) 
 		{
 			return HttpGetUtils.download(context,false);
-		}
-	},RECREATE
-	{
-		@Override
-		public DownloadState execute(DownloadContext context) 
-		{
-			return null;
 		}
 	},COMPLETE
 	{
 		@Override
-		public DownloadState execute(DownloadContext context) 
+		public DownloadState execute(IContext context) 
 		{
 			return null;
 		}
@@ -73,7 +67,7 @@ public enum DownloadState{
 	{
 		@Override
 
-		public DownloadState execute(DownloadContext context) 
+		public DownloadState execute(IContext context) 
 		{
 			return null;
 		}
@@ -84,5 +78,5 @@ public enum DownloadState{
         }
         return values()[ordinal];
     }
-	public abstract DownloadState execute(DownloadContext context);
+	public abstract DownloadState execute(IContext context);
 }

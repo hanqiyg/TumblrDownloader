@@ -190,6 +190,16 @@ public class H2DBService {
 			logger.debug("stmt execute." + e.getLocalizedMessage());
 		} 
 	}
+	public void deleteAll(){
+		try 
+		{
+			Statement stmt = con.createStatement();	        
+	        stmt.execute("DELETE FROM " + TABLE_NAME);        
+	        stmt.close();
+		} catch (SQLException e) {
+			logger.debug("stmt execute." + e.getLocalizedMessage());
+		} 
+	}
 	public void delete(IContext context) {
 		try 
 		{

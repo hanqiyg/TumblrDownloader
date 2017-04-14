@@ -18,7 +18,6 @@ import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.downloader.monitor.UIMonitor;
 import com.icesoft.tumblr.downloader.panel.DownloadPanel;
 import com.icesoft.tumblr.downloader.panel.LikesPanel;
-import com.icesoft.tumblr.downloader.panel.ResourceStatusPanel;
 import com.icesoft.tumblr.downloader.panel.SettingsPanel;
 
 
@@ -56,7 +55,6 @@ public class MainWindow {
 	private LikesPanel likesPanel;
 	private SettingsPanel settingsPanel;
 	private DownloadPanel downloadPanel;
-	private ResourceStatusPanel resourceStatusPanel;
 	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -105,13 +103,11 @@ public class MainWindow {
 		likesPanel = new LikesPanel();
 		settingsPanel = new SettingsPanel();
 		downloadPanel = new DownloadPanel();
-		resourceStatusPanel = new ResourceStatusPanel();
 		
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		tabbedPane.add("Likes", likesPanel);
-		tabbedPane.add("Settings", settingsPanel);
 		tabbedPane.add("Download", downloadPanel);
-		tabbedPane.add("ResourceStatus", resourceStatusPanel);
+		tabbedPane.add("Settings", settingsPanel);
 		
 		GridBagConstraints gbc_tabbedPane = new GridBagConstraints();
 		gbc_tabbedPane.insets = new Insets(0, 0, 5, 0);
@@ -143,7 +139,6 @@ public class MainWindow {
 
 		UIMonitor.getInstance().addUpdatable(likesPanel);
 		UIMonitor.getInstance().addUpdatable(downloadPanel);
-		UIMonitor.getInstance().addUpdatable(resourceStatusPanel);
 		UIMonitor.getInstance().turnOn();
 	}
 }

@@ -14,9 +14,9 @@ public class DownloadStateRenderer implements TableCellRenderer {
 	@Override
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
 			int row, int column) {
-		DownloadState state = (DownloadState) value;
 		if(value != null && value instanceof DownloadState)
 		{
+			DownloadState state = (DownloadState) value;
 			label.setOpaque(true);
 			label.setText(state.name());
 			switch(state)
@@ -33,8 +33,6 @@ public class DownloadStateRenderer implements TableCellRenderer {
 					break;
 				case PAUSE:			label.setBackground(Color.GRAY);
 					break;
-				case RECREATE:		label.setBackground(Color.GREEN);
-					break;
 				case RESUME:		label.setBackground(Color.GREEN);
 					break;
 				case WAIT:			label.setBackground(Color.WHITE);
@@ -44,6 +42,8 @@ public class DownloadStateRenderer implements TableCellRenderer {
 
 			}
 			return label;
+		}else{
+			System.out.println("DownloadState Null");
 		}
 		return null;
 	}

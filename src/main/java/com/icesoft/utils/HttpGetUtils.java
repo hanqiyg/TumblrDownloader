@@ -17,11 +17,12 @@ import org.apache.log4j.Logger;
 import com.icesoft.tumblr.contexts.DownloadContext;
 import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
 import com.icesoft.tumblr.state.DownloadState;
+import com.icesoft.tumblr.state.interfaces.IContext;
 
 public class HttpGetUtils 
 {
 	private static Logger logger = Logger.getLogger(DownloadState.class);  
-	public static DownloadState networkQuery(DownloadContext downloadContext)
+	public static DownloadState networkQuery(IContext downloadContext)
 	{
 		CloseableHttpClient client = HttpClientConnectionManager.getInstance().getHttpClient();
 		HttpGet get = new HttpGet(downloadContext.getURL());
@@ -70,7 +71,7 @@ public class HttpGetUtils
 			get.releaseConnection();
 		}
 	}
-	public static DownloadState localQuery(DownloadContext downloadContext)
+	public static DownloadState localQuery(IContext downloadContext)
 	{
 		File file = new File(downloadContext.getAbsolutePath());
 		if(file.exists())
@@ -122,13 +123,13 @@ public class HttpGetUtils
 		}
 		return DownloadState.EXCEPTION;
 	}
-	public static DownloadState download(DownloadContext downloadContext,boolean resume)
+	public static DownloadState download(IContext context,boolean resume)
 	{
 		CloseableHttpClient client = HttpClientConnectionManager.getInstance().getHttpClient();
-		HttpGet get = new HttpGet(downloadContext.getURL());
+		HttpGet get = new HttpGet(context.getURL());
 		if(resume)
 		{
-			get.addHeader("Range", "bytes="+ downloadContext.getLocalFilesize() +"-");
+			get.addHeader("Range", "bytes="+ context.getLocalFilesize() +"-");
 		}
 		ReadableByteChannel rbc = null;
 		FileOutputStream fos = null;
@@ -137,87 +138,85 @@ public class HttpGetUtils
 			response = client.execute(get);
 			if(response.getStatusLine().getStatusCode() >=200 && response.getStatusLine().getStatusCode() < 300)
 			{
-				downloadContext.setMessage("Downloading.");
+				context.setMessage("Downloading.");
 				HttpEntity entity = response.getEntity();
 				rbc = Channels.newChannel(entity.getContent());
-				fos = new FileOutputStream(downloadContext.getAbsolutePath(), true);
+				fos = new FileOutputStream(context.getAbsolutePath(), true);
 				long remainingSize = entity.getContentLength();
 				long buffer = remainingSize;
 				if (remainingSize > 65536) 
 				{
 					buffer = 1 << 16;
 				}
-				while (remainingSize > 0 && downloadContext.isRun()) 
+				while (remainingSize > 0 && context.isRun()) 
 				{
 					long begin = System.currentTimeMillis();
 					long delta;
-					delta = fos.getChannel().transferFrom(rbc, downloadContext.getLocalFilesize(), buffer);
+					delta = fos.getChannel().transferFrom(rbc, context.getLocalFilesize(), buffer);
 					remainingSize -= delta;	
 					long end = System.currentTimeMillis();
-					downloadContext.setLocalFilesize(downloadContext.getLocalFilesize() + delta);
+					context.setLocalFilesize(context.getLocalFilesize() + delta);
 					long t = end - begin;
-					downloadContext.setCurrentSpeed(t,delta);
-					downloadContext.addTotalTime(t);
+					context.setCurrentSpeed(t,delta);
+					context.addTotalTime(t);
 					if (delta == 0) 
 					{
 						break;
 					}
-					if(downloadContext.getRemoteFilesize() < downloadContext.getLocalFilesize())
-					{
-						downloadContext.setMessage("Local File Exception.[LOCAL:"+ UnitUtils.getFormatSize(downloadContext.getLocalFilesize()) 
-								+" Remote:" + UnitUtils.getFormatSize(downloadContext.getRemoteFilesize()) + "]");
-						logger.debug("return DownloadState.EXCEPTION");
-						return DownloadState.EXCEPTION;
-					}
 				}
-				if(downloadContext.getRemoteFilesize() != downloadContext.getLocalFilesize())
+				if(context.getRemoteFilesize() != context.getLocalFilesize())
 				{
-					if(!downloadContext.isRun())
+					if(!context.isRun())
 					{
-						downloadContext.setMessage("User Canceled.");
+						context.setMessage("User Canceled.");
 						logger.debug("return DownloadState.PAUSE");
 						return DownloadState.PAUSE;
 					}
-					else
+					else if(context.getRemoteFilesize() < context.getLocalFilesize())
 					{
-						downloadContext.setMessage("Local File Exception.[LOCAL:"+ UnitUtils.getFormatSize(downloadContext.getLocalFilesize()) 
-							+" Remote:" + UnitUtils.getFormatSize(downloadContext.getRemoteFilesize()) + "]");
+						context.setMessage("Local File Exception1.[LOCAL:"+ UnitUtils.getFormatSize(context.getLocalFilesize()) 
+							+" Remote:" + UnitUtils.getFormatSize(context.getRemoteFilesize()) + "]");
+						logger.debug("return DownloadState.EXCEPTION");
+						return DownloadState.EXCEPTION;
+					}else{
+						context.setMessage("Transmission interruption.[LOCAL:"+ UnitUtils.getFormatSize(context.getLocalFilesize()) 
+								+" Remote:" + UnitUtils.getFormatSize(context.getRemoteFilesize()) + "]");
 						logger.debug("return DownloadState.EXCEPTION");
 						return DownloadState.EXCEPTION;
 					}
 				}
 				else
 				{
-					downloadContext.setMessage("Download Complete.");
+					context.setMessage("Download Complete.");
 					logger.debug("return DownloadState.COMPLETE");
 					return DownloadState.COMPLETE;
 				}				
 			}
 			else
 			{
-				downloadContext.setMessage("StatusCode is not fit." + response.getStatusLine().getStatusCode());
+				context.setMessage("StatusCode is not fit." + response.getStatusLine().getStatusCode());
 				logger.debug("return DownloadState.EXCEPTION");
 				return DownloadState.EXCEPTION;
 			}
 		} 
         catch (ClientProtocolException e) 
         {
-			downloadContext.setMessage("StatusCode is not fit." + e.getLocalizedMessage());
+			context.setMessage("StatusCode is not fit." + e.getLocalizedMessage());
 			return DownloadState.EXCEPTION;
 		} 
         catch (UnsupportedOperationException e) 
         {
-			downloadContext.setMessage("StatusCode is not fit." + e.getLocalizedMessage());
+			context.setMessage("StatusCode is not fit." + e.getLocalizedMessage());
 			return DownloadState.EXCEPTION;
 		} 
         catch (FileNotFoundException e) 
         {
-			downloadContext.setMessage("StatusCode is not fit." + e.getLocalizedMessage());
+			context.setMessage("StatusCode is not fit." + e.getLocalizedMessage());
 			return DownloadState.EXCEPTION;
 		} 
         catch (IOException e) 
         {
-			downloadContext.setMessage("StatusCode is not fit." + e.getLocalizedMessage());
+			context.setMessage("StatusCode is not fit." + e.getLocalizedMessage());
 			return DownloadState.EXCEPTION;
 		}
 		finally
@@ -227,7 +226,7 @@ public class HttpGetUtils
 				try {
 					response.close();
 				} catch (IOException e) {
-					downloadContext.setMessage("close response error.");
+					context.setMessage("close response error.");
 					logger.debug("return DownloadState.EXCEPTION");
 					return DownloadState.EXCEPTION;
 				}
@@ -237,7 +236,7 @@ public class HttpGetUtils
 				try {	
 					rbc.close();
 				} catch (IOException e) {
-					downloadContext.setMessage("Byte Channel close Exception. [" + e.getLocalizedMessage() + "]");
+					context.setMessage("Byte Channel close Exception. [" + e.getLocalizedMessage() + "]");
 				}
 			}
 			if(fos != null )
@@ -246,7 +245,7 @@ public class HttpGetUtils
 					fos.getChannel().force(true);
 					fos.close();
 				} catch (IOException e) {
-					downloadContext.setMessage("FileOutputStream close Exception. [" + e.getLocalizedMessage() + "]");
+					context.setMessage("FileOutputStream close Exception. [" + e.getLocalizedMessage() + "]");
 				}
 			}
 			get.releaseConnection();

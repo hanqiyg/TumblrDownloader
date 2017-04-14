@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
 import com.icesoft.tumblr.downloader.panel.interfaces.IUpdatable;
+import com.icesoft.tumblr.downloader.service.H2DBService;
 import com.icesoft.tumblr.downloader.tablemodel.DateCellRenderer;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadActiveFilter;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadModel;
@@ -42,17 +43,16 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 	private static Logger logger = Logger.getLogger(DownloadPanel.class);  
 	private JTable table;
 	private DownloadModel model;
-	private JLabel lblHttpClientStats;
-	private JLabel lblThreadState;
 	private TableRowSorter<DownloadModel> sorter;
 	private JProgressBar pbHttpClients;
 	private JProgressBar pbThreads;
 	private JProgressBar pbTasks;
+	private JProgressBar pbMemory;
 	public DownloadPanel() {
 		model = new DownloadModel();
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWeights = new double[]{1.0};
-		gridBagLayout.rowWeights = new double[]{0.0, 0.0, 1.0};
+		gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0,1.0};
 		setLayout(gridBagLayout);
 		JScrollPane scrollPane = new JScrollPane();
 		sorter = new TableRowSorter<DownloadModel>(model);
@@ -134,6 +134,15 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 				}
 			});
 			plControl.add(btnStopAll);		
+			
+			JButton btnClearDB = new JButton("Clear Database");
+			btnClearDB.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					DownloadManager.getInstance().removeAllTask(true);
+					H2DBService.getInstance().deleteAll();
+				}
+			});
+			plControl.add(btnClearDB);	
 		
 /*		JPanel plStatus = new JPanel();
 		GridBagConstraints gbc_plStatus = new GridBagConstraints();
@@ -149,6 +158,35 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 			
 			lblThreadState = new JLabel("");
 			plStatus.add(lblThreadState);*/
+		JPanel plMemory = new JPanel();
+		GridBagConstraints gbc_plMemory = new GridBagConstraints();
+		gbc_plMemory.anchor = GridBagConstraints.NORTH;
+		gbc_plMemory.fill = GridBagConstraints.HORIZONTAL;
+		gbc_plMemory.insets = new Insets(5, 5, 5, 5);
+		gbc_plMemory.gridx = 0;
+		gbc_plMemory.gridy = 1;
+		add(plMemory, gbc_plMemory);
+		GridBagLayout gbl_plMemory = new GridBagLayout();
+		gbl_plMemory.columnWeights = new double[]{ 0.0, 1.0};
+		gbl_plMemory.rowWeights = new double[]{0.0};
+		plMemory.setLayout(gbl_plMemory);
+		
+			JLabel lbMemory = new JLabel("Memory:");
+			GridBagConstraints gbc_lbMemory = new GridBagConstraints();
+			gbc_lbMemory.anchor = GridBagConstraints.NORTHWEST;
+			gbc_lbMemory.insets = new Insets(5, 5, 5, 5);
+			gbc_lbMemory.gridx = 0;
+			gbc_lbMemory.gridy = 0;
+			plMemory.add(lbMemory, gbc_lbMemory);
+			
+			pbMemory = new JProgressBar();
+			GridBagConstraints gbc_pbMemory = new GridBagConstraints();			
+			gbc_pbMemory.anchor = GridBagConstraints.NORTH;
+			gbc_pbMemory.fill = GridBagConstraints.HORIZONTAL;
+			gbc_pbMemory.insets = new Insets(5, 5, 5, 5);
+			gbc_pbMemory.gridx = 1;
+			gbc_pbMemory.gridy = 0;
+			plMemory.add(pbMemory, gbc_pbMemory);
 		
 		JPanel plStatusProgress = new JPanel();
 		GridBagConstraints gbc_panel = new GridBagConstraints();
@@ -156,7 +194,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		gbc_panel.fill = GridBagConstraints.HORIZONTAL;
 		gbc_panel.insets = new Insets(5, 5, 5, 5);
 		gbc_panel.gridx = 0;
-		gbc_panel.gridy = 1;
+		gbc_panel.gridy = 2;
 		add(plStatusProgress, gbc_panel);
 		
 		GridBagLayout gbl_panel = new GridBagLayout();
@@ -221,7 +259,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		GridBagConstraints gbc_scrollPane = new GridBagConstraints();
 		gbc_scrollPane.fill = GridBagConstraints.BOTH;
 		gbc_scrollPane.gridx = 0;
-		gbc_scrollPane.gridy = 2;
+		gbc_scrollPane.gridy = 3;
 		add(scrollPane, gbc_scrollPane);
 	}
 	public void loadStats(){
@@ -239,6 +277,17 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 			pbHttpClients.setString("");
 			pbHttpClients.setStringPainted(true);
 		}
+	}
+	public void memoryInfo()
+	{
+		int totalMemory = (int) (Runtime.getRuntime().totalMemory()/(1024*1024));
+		int freeMemory = (int) (Runtime.getRuntime().freeMemory()/(1024*1024));
+		
+		pbMemory.setMaximum(totalMemory);
+		pbMemory.setMinimum(0);
+		pbMemory.setValue(freeMemory);
+		pbMemory.setString(freeMemory + " MB / " + totalMemory + "MB");
+		pbMemory.setStringPainted(true);
 	}
 	public  void loadThreadsInfo(){
 /*		ThreadInfo[] infos = DownloadManager.getInstance().getThreadsInfo();
@@ -273,10 +322,11 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 
 	@Override
 	public void update() {
+		memoryInfo();
+		loadStats();
+		loadThreadsInfo();
 		if(model!= null){
 			fireTableDataChangeAndPreserveSelection(table);
-			loadStats();
-			loadThreadsInfo();
 		}	
 	}
 	public void fireTableDataChangeAndPreserveSelection(JTable table){

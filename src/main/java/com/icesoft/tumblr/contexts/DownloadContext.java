@@ -49,12 +49,7 @@ public class DownloadContext implements IContext{
 		this.totalTime.set(totalTime);
 
 	}
-	public void perform(){
-		if(state != null)
-		{
-			state = state.execute(this);
-		}
-	}
+
 	public synchronized String getURL() {
 		return URL;
 	}

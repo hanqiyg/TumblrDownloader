@@ -56,5 +56,10 @@ public class Start {
 			System.out.println(p.name() + " : " + p.ordinal());
 		}
 	}
+	@Test
+	public void deleteDB()
+	{
+		H2DBService.getInstance().deleteAll();
+	}
 }
 
