@@ -17,44 +17,40 @@ public class DownloadModel extends AbstractTableModel {
 	private static final long serialVersionUID = 4901965435625204398L;
 	
 	public enum ColName{
-		ID(0,"#",Integer.class),
-		NAME(1,"Name",String.class),
-		URL(2,"URL",String.class),
-		PRIORITY(3,"Priority",DownloadPriority.class),
-		STATUS(4,"Status",DownloadState.class),
-		PROGRESS(5,"Progress",ProgressObject.class),
-		SPEED(6,"Speed",SpeedObject.class),
-		CREATETIME(7,"Create Time",Date.class),
-		RECIVED(8,"Recived Size",SizeObject.class),
-		TOTAL(9,"Total Size",SizeObject.class),
-		MESSAGE(10,"Message",String.class);
+		ID("#",Integer.class),
+		NAME("Name",String.class),
+		URL("URL",String.class),
+		PRIORITY("Priority",DownloadPriority.class),
+		STATUS("Status",DownloadState.class),
+		PROGRESS("Progress",ProgressObject.class),
+		SPEED("Speed",SpeedObject.class),
+		CREATETIME("Create Time",Date.class),
+		TOTALTIME("Total Time",long.class),
+		RECIVED("Recived Size",SizeObject.class),
+		TOTAL("Total Size",SizeObject.class),
+		MESSAGE("Message",String.class);		
 
-		private int index;
 		private String text;
 		private Class<?> clazz;
 		
-		private ColName(int index,String text,Class<?> clazz){
-			this.index = index;
+		private ColName(String text,Class<?> clazz){
 			this.text = text;
 			this.clazz = clazz;
 		}
 		public String toString(){
 			return text;
 		}
-		public int intValue(){
-			return index;
-		}
 		public Class<?> toClass(){
 			return clazz;
 		}
-		public static ColName valueOf(int col) {
-			for(ColName c : ColName.values()){
-				if(c.index == col){
-					return c;
-				}
-			}
-			return null;
-		}
+		public static ColName valueOf(int ordinal)
+		{
+			if (ordinal < 0 || ordinal >= values().length)
+			{
+	            throw new IndexOutOfBoundsException("Invalid ordinal");
+	        }
+	        return values()[ordinal];
+	    }
 	}
 	@Override
 	public int getColumnCount() {
@@ -96,6 +92,7 @@ public class DownloadModel extends AbstractTableModel {
 			case TOTAL:			return new SizeObject(context.getRemoteFilesize());
 			case URL:			return context.getURL();
 			case PRIORITY:		return context.getPriority();
+			case TOTALTIME:		return context.getTotalTime();
 			default:			return null;
 		}		
 	}

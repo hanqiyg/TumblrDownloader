@@ -22,24 +22,38 @@ public class H2DBService {
 	private Connection con;
 	
 	public static final String DRIVER = "org.h2.Driver";
-	public static final String DB_URL = "jdbc:h2:./download;AUTO_SERVER=TRUE";
+	public static final String DB_URL = "jdbc:h2:";
+	public static final String DB_NAME = "./download";
 	public static final String DB_USER = "sa";
 	public static final String DB_PASS = "mypass";
 	
 	public static final String TABLE_NAME = "download";
 	
+	public boolean functional = false;
+	
 	private H2DBService()
 	{
 		 try {
 			Class.forName(DRIVER);
-	        con = DriverManager.getConnection( DB_URL,DB_USER,"");
-		} catch (ClassNotFoundException | SQLException e) {
-			logger.debug("connect execute." + e.getLocalizedMessage());
+	        con = DriverManager.getConnection( DB_URL + DB_NAME ,DB_USER,"");
+		} catch (ClassNotFoundException e){
+			logger.debug("H2DB driver is not found.[" + DRIVER + "]");
+		} catch (SQLException e) {
+			switch(e.getErrorCode() )
+			{
+				case 90020 : {
+								logger.debug("DB locked by another application. [" + DB_NAME + "]");
+							}break;					
+				default:	{
+								logger.debug("connect execute." + e.getLocalizedMessage());
+							}break;
+			}
+			functional = false;
 		}
 	}
 	public static H2DBService getInstance(){
 		return instance;
-	}	
+	}
 	public void createDB()
 	{
 		try {
@@ -48,8 +62,7 @@ public class H2DBService {
 	        		+ "filename VARCHAR(255),filesize BIGINT, ext VARCHAR(64), savepath VARCHAR(255),totalTime BIGINT, priority INT)");
 	        stmt.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.debug("stmt execute." + e.getLocalizedMessage());
 		}
 	}
 	public void dropDB()
@@ -59,46 +72,61 @@ public class H2DBService {
 			stmt.execute("DROP TABLE " + TABLE_NAME);
 	        stmt.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.debug("stmt execute." + e.getLocalizedMessage());
 		}
 	}
 	public List<IContext> loadTask(){
 		List<IContext> tasks = new ArrayList<IContext>();
 		try 
 		{
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT * FROM " + TABLE_NAME);
-			int i = 0;
-	        while(rs.next()){
-	        	i++;
-	        	System.out.println("load task:[" 	+ i +"] " 
-	        			   + " url:"			+ rs.getString("url") 
-	        			   + " time:" 		+ rs.getTimestamp("createtime")
-	        			   + " state:" 		+ rs.getInt("state")
-	        			   + " filename:" 	+ rs.getString("filename")
-	        			   + " filesize"  	+ rs.getLong("filesize")
-	        			   + " ext:" 		+ rs.getString("ext")
-	        			   + " savepath:" 	+ rs.getString("savepath")
-	        			   + " totalTime:" 	+ rs.getLong("totalTime")
-	        			   + " priority:" 	+ rs.getInt("priority")
-	        			   );
-	        	String url = rs.getString("url");
-	        	Timestamp time = rs.getTimestamp("createtime");
-	        	int state = rs.getInt("state");
-	        	String filename = rs.getString("filename");
-	        	long filesize = rs.getLong("filesize");
-	        	String ext = rs.getString("ext");
-	        	String savepath = rs.getString("savepath");
-	        	long totalTime = rs.getLong("totalTime");
-	        	int priority = rs.getInt("priority");
-	        	DownloadContext task = new DownloadContext(url, filename, filesize, time.getTime(), state,ext, savepath,totalTime,priority);
-	        	tasks.add(task);
-	        }
-	        stmt.close();
-		} catch (SQLException e) {
-			logger.debug("stmt execute." + e.getLocalizedMessage());
-		}
+			if(con != null)
+			{
+				Statement stmt = con.createStatement();
+				ResultSet rs = stmt.executeQuery("SELECT * FROM " + TABLE_NAME);
+				int i = 0;
+		        while(rs.next()){
+		        	i++;
+		        	System.out.println("load task:[" 	+ i +"] " 
+		        			   + " url:"			+ rs.getString("url") 
+		        			   + " time:" 		+ rs.getTimestamp("createtime")
+		        			   + " state:" 		+ rs.getInt("state")
+		        			   + " filename:" 	+ rs.getString("filename")
+		        			   + " filesize"  	+ rs.getLong("filesize")
+		        			   + " ext:" 		+ rs.getString("ext")
+		        			   + " savepath:" 	+ rs.getString("savepath")
+		        			   + " totalTime:" 	+ rs.getLong("totalTime")
+		        			   + " priority:" 	+ rs.getInt("priority")
+		        			   );
+		        	String url = rs.getString("url");
+		        	Timestamp time = rs.getTimestamp("createtime");
+		        	int state = rs.getInt("state");
+		        	String filename = rs.getString("filename");
+		        	long filesize = rs.getLong("filesize");
+		        	String ext = rs.getString("ext");
+		        	String savepath = rs.getString("savepath");
+		        	long totalTime = rs.getLong("totalTime");
+		        	int priority = rs.getInt("priority");
+		        	DownloadContext task = new DownloadContext(url, filename, filesize, time.getTime(), state,ext, savepath,totalTime,priority);
+		        	tasks.add(task);
+		        }
+		        stmt.close();
+			}
+		} catch (SQLException e) 
+		{			
+			switch(e.getErrorCode() )
+			{
+				case 90020 : {
+								logger.debug("DB locked by another application. [" + DB_URL + "]");
+							}break;					
+				case 42102 : {
+								logger.debug("Create Table [" + TABLE_NAME + "]");
+								createDB();	
+							}break;
+				default:	{
+								logger.debug("stmt execute." + e.getLocalizedMessage());
+							}break;
+			}
+		}		
 		return tasks;
 	}
 	public void updateContexts(List<IContext> contexts)

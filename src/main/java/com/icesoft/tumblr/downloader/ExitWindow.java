@@ -101,6 +101,15 @@ public class ExitWindow extends JDialog {
 				buttonPane.add(btnExit);
 				getRootPane().setDefaultButton(btnExit);
 			}
+			{
+				JButton btnCancel = new JButton("Cancel");
+				btnCancel.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						ExitWindow.this.dispose();
+					}
+				});
+				buttonPane.add(btnCancel);
+			}
 		}
 		exitThread = new Thread(){
 			@Override
@@ -122,6 +131,6 @@ public class ExitWindow extends JDialog {
 				System.exit(0);
 			}
 		};
-		this.setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
+		this.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 	}
 }

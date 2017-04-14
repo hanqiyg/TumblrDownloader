@@ -11,10 +11,14 @@ import java.util.Properties;
 
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
+import javax.swing.UIManager;
+import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import org.apache.log4j.PropertyConfigurator;
 
 import com.icesoft.tumblr.downloader.configure.Settings;
+import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.monitor.UIMonitor;
 import com.icesoft.tumblr.downloader.panel.DownloadPanel;
 import com.icesoft.tumblr.downloader.panel.LikesPanel;
@@ -62,7 +66,7 @@ public class MainWindow {
 				try {
 					MainWindow window = new MainWindow();
 					window.frame.setVisible(true);
-					window.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+					window.frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 					window.frame.addWindowListener(new WindowAdapter()
 					{
 						public void windowClosing(WindowEvent e){
@@ -86,8 +90,19 @@ public class MainWindow {
 		});
 	}
 	
-	public MainWindow() {
+	public MainWindow() 
+	{
+		try {
+		    for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+		        if ("Nimbus".equals(info.getName())) {
+		            UIManager.setLookAndFeel(info.getClassName());
+		            break;
+		        }
+		    }
+		} catch (Exception e) {
+		}
 		initialize();
+		DownloadManager.getInstance().loadTasks();
 	}
 	private void initialize() {
 		//services = new TumblrServices();

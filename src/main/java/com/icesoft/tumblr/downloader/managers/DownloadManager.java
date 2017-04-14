@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 import com.icesoft.tumblr.contexts.DownloadContext;
-import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.downloader.service.H2DBService;
 import com.icesoft.tumblr.downloader.workers.HttpGetWorker;
 import com.icesoft.tumblr.executors.Contextful;
@@ -35,9 +34,7 @@ public class DownloadManager {
 	private List<IContext> contexts = new ArrayList<IContext>();
 
 	
-	private DownloadManager(){
-		loadTasks();
-	}
+	private DownloadManager(){}
 	public static DownloadManager getInstance(){
 		return instance;
 	}
@@ -279,23 +276,37 @@ public class DownloadManager {
 		}
 	}
 	public void removeAllTask(boolean removeFile){
+		pool.shutdown();
+		pool.getQueue().clear();
+
+		synchronized(contexts)
+		{
+			for(IContext c : contexts)
+			{
+				c.setRun(false);
+			}
+		}
+		try {
+			pool.awaitTermination(60, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			pool.shutdownNow();
+		}	
 		synchronized(contexts)
 		{
 			Iterator<IContext> it = contexts.iterator();
 			while(it.hasNext())
 			{
 				IContext context = it.next();
-				if(context.isRun())
-				{
-					context.setRun(false);
-				}
 				it.remove();
 				H2DBService.getInstance().delete(context);
 				if(removeFile && context.getAbsolutePath() != null){
 					deleteFile(context.getAbsolutePath());
 				}
+				H2DBService.getInstance().deleteAll();
 			}
 		}
+		pool = new PriorityThreadPoolExecutor(
+				4, 6, 10, TimeUnit.SECONDS, queue, threadFactory, rejecter);
 	}
 	private void deleteFile(String absolutePath) {
 		File file = new File(absolutePath);

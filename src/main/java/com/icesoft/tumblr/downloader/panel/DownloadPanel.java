@@ -33,6 +33,7 @@ import com.icesoft.tumblr.downloader.tablemodel.DownloadPriorityRenderer;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadStateRenderer;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadTaskStateFilter;
 import com.icesoft.tumblr.downloader.tablemodel.ProgressCellRenderer;
+import com.icesoft.tumblr.downloader.tablemodel.TotalTimeRenderer;
 import com.icesoft.tumblr.downloader.ui.utils.MenuUtils;
 import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
@@ -62,6 +63,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		table.getColumn(ColName.CREATETIME.toString()).setCellRenderer(new DateCellRenderer());
 		table.getColumn(ColName.PRIORITY.toString()).setCellRenderer(new DownloadPriorityRenderer());
 		table.getColumn(ColName.STATUS.toString()).setCellRenderer(new DownloadStateRenderer());
+		table.getColumn(ColName.TOTALTIME.toString()).setCellRenderer(new TotalTimeRenderer());
 		table.setRowSorter(sorter);
 		table.addMouseListener(new MouseAdapter(){
 			@Override
@@ -143,21 +145,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 				}
 			});
 			plControl.add(btnClearDB);	
-		
-/*		JPanel plStatus = new JPanel();
-		GridBagConstraints gbc_plStatus = new GridBagConstraints();
-		gbc_plStatus.anchor = GridBagConstraints.NORTH;
-		gbc_plStatus.fill = GridBagConstraints.HORIZONTAL;
-		gbc_plStatus.insets = new Insets(0, 0, 5, 0);
-		gbc_plStatus.gridx = 0;
-		gbc_plStatus.gridy = 1;
-		add(plStatus, gbc_plStatus);
-		
-			lblHttpClientStats = new JLabel("");
-			plStatus.add(lblHttpClientStats);
-			
-			lblThreadState = new JLabel("");
-			plStatus.add(lblThreadState);*/
+	
 		JPanel plMemory = new JPanel();
 		GridBagConstraints gbc_plMemory = new GridBagConstraints();
 		gbc_plMemory.anchor = GridBagConstraints.NORTH;

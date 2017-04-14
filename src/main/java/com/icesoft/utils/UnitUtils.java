@@ -55,4 +55,29 @@ public class UnitUtils {
         BigDecimal result4 = new BigDecimal(teraBytes);  
         return result4.setScale(2, BigDecimal.ROUND_HALF_UP).toPlainString() + "TB";  
     }
+	public static String getDays(long time) {
+		String format = "%3d Days %02d:%02d:%02d.%03d";
+		long days=0,hours=0,mins=0,seconds=0,ms=0;
+		ms = time%1000l;
+		seconds = time / 1000l;
+		if(seconds < 60l )
+		{
+			return String.format(format,days,hours,mins,seconds,ms);
+		}
+		mins = seconds / 60l ;
+		seconds = seconds % 60l ;
+		if(mins < 60 )
+		{
+			return String.format(format,days,hours,mins,seconds,ms);
+		}
+		hours = mins / 60l ;
+		mins = mins % 60l ;
+		if(hours < 24 )
+		{
+			return String.format(format,days,hours,mins,seconds,ms);
+		}
+		days = hours / 24l ;
+		hours = hours % 24l ;
+		return String.format(format,days,hours,mins,seconds,ms);
+    }
 }
