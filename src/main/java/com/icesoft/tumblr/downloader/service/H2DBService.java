@@ -29,9 +29,9 @@ public class H2DBService {
 	
 	public static final String TABLE_NAME = "download";
 	
-	public boolean functional = false;
 	
-	private H2DBService()
+	private H2DBService(){}
+	public String init()
 	{
 		 try {
 			Class.forName(DRIVER);
@@ -43,13 +43,15 @@ public class H2DBService {
 			{
 				case 90020 : {
 								logger.debug("DB locked by another application. [" + DB_NAME + "]");
-							}break;					
+								return "DB locked by another application. [" + DB_NAME + "]";
+							}					
 				default:	{
 								logger.debug("connect execute." + e.getLocalizedMessage());
-							}break;
+								return "connect execute." + e.getLocalizedMessage();
+							}
 			}
-			functional = false;
 		}
+		return null;
 	}
 	public static H2DBService getInstance(){
 		return instance;

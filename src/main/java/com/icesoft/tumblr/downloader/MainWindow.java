@@ -10,6 +10,7 @@ import java.io.File;
 import java.util.Properties;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
@@ -23,6 +24,7 @@ import com.icesoft.tumblr.downloader.monitor.UIMonitor;
 import com.icesoft.tumblr.downloader.panel.DownloadPanel;
 import com.icesoft.tumblr.downloader.panel.LikesPanel;
 import com.icesoft.tumblr.downloader.panel.SettingsPanel;
+import com.icesoft.tumblr.downloader.service.H2DBService;
 
 
 public class MainWindow {
@@ -77,6 +79,7 @@ public class MainWindow {
 							int x = window.frame.getX() + w /2;
 							int y = window.frame.getY() + h /2;
 							ExitWindow exit = new ExitWindow(x,y,w,h);
+							UIMonitor.getInstance().addUpdatable(exit);
 							exit.setVisible(false);  
 							exit.setModal(true);  
 							exit.setAlwaysOnTop(false);  
@@ -102,6 +105,13 @@ public class MainWindow {
 		} catch (Exception e) {
 		}
 		initialize();
+		String error = H2DBService.getInstance().init();
+		if(error != null){
+			Object[] options ={ "Exit"};  
+			JOptionPane.showOptionDialog(null, 
+					error, "Error",JOptionPane.CLOSED_OPTION, JOptionPane.ERROR_MESSAGE, null, options, options[0]); 
+			System.exit(0);
+		}
 		DownloadManager.getInstance().loadTasks();
 	}
 	private void initialize() {
@@ -132,8 +142,8 @@ public class MainWindow {
 		frame.getContentPane().add(tabbedPane);
 		
 		Properties systemProperties = System.getProperties();
-		systemProperties.setProperty("socksProxyHost",Settings.getInstance().getProxySettings().getHost());
-		systemProperties.setProperty("socksProxyPort",String.valueOf(Settings.getInstance().getProxySettings().getPort()));
+		//systemProperties.setProperty("socksProxyHost",Settings.getInstance().getProxySettings().getHost());
+		//systemProperties.setProperty("socksProxyPort",String.valueOf(Settings.getInstance().getProxySettings().getPort()));
 		
 		 //Enable header wire + context logging - Best for Debugging
 /*	    System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");

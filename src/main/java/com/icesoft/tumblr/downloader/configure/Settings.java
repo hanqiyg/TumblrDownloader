@@ -1,5 +1,12 @@
 package com.icesoft.tumblr.downloader.configure;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.Proxy;
+import java.net.SocketAddress;
+import java.net.URL;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -199,4 +206,69 @@ public class Settings {
 			e.printStackTrace();
 		}
 	}
+	public enum ProxyType{
+		DIRECT,HTTP,SOCKS
+	};
+	public boolean testConnect(ProxyType type,String host,int port){
+		HttpURLConnection connection = null;
+		try {
+			URL url = new URL("https://tumblr.com/");
+			Proxy proxy = null;
+			SocketAddress addr = new
+					InetSocketAddress(host, port);
+			switch(type)
+			{
+				case HTTP:	proxy = new Proxy(Proxy.Type.HTTP, addr);
+					break;
+				case SOCKS:	proxy = new Proxy(Proxy.Type.SOCKS, addr);
+					break;
+				case DIRECT:
+					break;
+				default:
+					break;
+			}
+			if(proxy == null)
+			{
+				connection = (HttpURLConnection)url.openConnection();
+			}
+			else
+			{
+				connection = (HttpURLConnection)url.openConnection(proxy);
+			}		    
+		    connection.setConnectTimeout(10 * 1000);
+		    connection.setReadTimeout(10 * 1000);
+		    connection.setRequestMethod("GET");
+		    connection.connect();
+			return true;
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		} catch (IOException e) {
+			return false;
+		}finally{
+			connection.disconnect();
+			connection = null;
+		}
+	}
+	public void clearProxyProperties()
+	{
+		System.clearProperty("http.proxyHost");
+		System.clearProperty("http.proxyPort");
+		System.clearProperty("socksProxyHost");
+		System.clearProperty("socksProxyPort");
+	}
+	private String httpproxyHost = null;
+	private String httpproxyPort = null;
+	private String socksProxyHost = null;
+	private String socksProxyPort = null;
+	
+	public void saveProxyProperties()
+	{
+		httpproxyHost = System.getProperty("http.proxyHost");
+		httpproxyPort = System.getProperty("http.proxyPort");
+		socksProxyHost = System.getProperty("socksProxyHost");
+		socksProxyPort = System.getProperty("socksProxyPort");
+	}
 }
+
