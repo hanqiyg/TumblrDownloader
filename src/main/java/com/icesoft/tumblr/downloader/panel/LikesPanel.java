@@ -115,7 +115,7 @@ public class LikesPanel extends JPanel implements IUpdatable{
 								VideoInfo info = UrlService.getVideoInfoFromEmbed(embed);
 								String url = info.getURL();
 								String poster = info.getPosterURL();
-								String saveLocation = Settings.getInstance().getSaveLocation();
+								String saveLocation = Settings.getInstance().getPath();
 								String id = TumblrServices.getInstance().getBlogId(v);
 								String name = TumblrServices.getInstance().getBlogName(v);
 								DownloadManager.getInstance().addNewTask(new DownloadContext(url,DownloadState.WAIT,saveLocation + File.separator + name + File.separator + id));
@@ -133,7 +133,7 @@ public class LikesPanel extends JPanel implements IUpdatable{
 						for(Photo photo : photoPost.getPhotos()){
 							String url = photo.getOriginalSize().getUrl();								
 							//DownloadManager.getInstance().addImageTask(new ImageInfo(url,TumblrServices.getInstance().getBlogId(photoPost),TumblrServices.getInstance().getBlogName(photoPost)));
-							String saveLocation = Settings.getInstance().getSaveLocation();
+							String saveLocation = Settings.getInstance().getPath();
 							String id = TumblrServices.getInstance().getBlogId(photoPost);
 							String name = TumblrServices.getInstance().getBlogName(photoPost);
 							DownloadManager.getInstance().addNewTask(new DownloadContext(url,DownloadState.WAIT,saveLocation + File.separator + name + File.separator + id));

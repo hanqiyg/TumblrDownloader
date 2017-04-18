@@ -1,5 +1,7 @@
 package com.icesoft.tumblr.downloader.service;
 
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -12,6 +14,8 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.icesoft.tumblr.contexts.DownloadContext;
+import com.icesoft.tumblr.downloader.configure.Config;
+import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.state.DownloadPriority;
 import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
@@ -27,7 +31,8 @@ public class H2DBService {
 	public static final String DB_USER = "sa";
 	public static final String DB_PASS = "mypass";
 	
-	public static final String TABLE_NAME = "download";
+	public static final String DOWNLOAD = "download";
+	public static final String SETTINGS = "settings";
 	
 	
 	private H2DBService(){}
@@ -56,22 +61,23 @@ public class H2DBService {
 	public static H2DBService getInstance(){
 		return instance;
 	}
-	public void createDB()
+
+	public void createDownloadTable()
 	{
 		try {
 	        Statement stmt = con.createStatement();
-	        stmt.execute("CREATE TABLE " + TABLE_NAME + " (url VARCHAR(2083) primary key, createtime TIMESTAMP, state INT, "
+	        stmt.execute("CREATE TABLE " + DOWNLOAD + " (url VARCHAR(2083) primary key, createtime TIMESTAMP, state INT, "
 	        		+ "filename VARCHAR(255),filesize BIGINT, ext VARCHAR(64), savepath VARCHAR(255),totalTime BIGINT, priority INT)");
 	        stmt.close();
 		} catch (SQLException e) {
 			logger.debug("stmt execute." + e.getLocalizedMessage());
 		}
 	}
-	public void dropDB()
+	public void dropDownloadTable()
 	{
         try {
         	Statement stmt = con.createStatement();
-			stmt.execute("DROP TABLE " + TABLE_NAME);
+			stmt.execute("DROP TABLE " + DOWNLOAD);
 	        stmt.close();
 		} catch (SQLException e) {
 			logger.debug("stmt execute." + e.getLocalizedMessage());
@@ -84,7 +90,7 @@ public class H2DBService {
 			if(con != null)
 			{
 				Statement stmt = con.createStatement();
-				ResultSet rs = stmt.executeQuery("SELECT * FROM " + TABLE_NAME);
+				ResultSet rs = stmt.executeQuery("SELECT * FROM " + DOWNLOAD);
 				int i = 0;
 		        while(rs.next()){
 		        	i++;
@@ -121,8 +127,8 @@ public class H2DBService {
 								logger.debug("DB locked by another application. [" + DB_URL + "]");
 							}break;					
 				case 42102 : {
-								logger.debug("Create Table [" + TABLE_NAME + "]");
-								createDB();	
+								logger.debug("Create Table [" + DOWNLOAD + "]");
+								createDownloadTable();	
 							}break;
 				default:	{
 								logger.debug("stmt execute." + e.getLocalizedMessage());
@@ -149,7 +155,7 @@ public class H2DBService {
 			if(url != null && !url.trim().equals("")){
 				try {
 					stmt = con.createStatement();
-					stmt.execute("UPDATE " + TABLE_NAME + " SET state='" + state + "',"
+					stmt.execute("UPDATE " + DOWNLOAD + " SET state='" + state + "',"
 							+ " filename='" + filename + "'," 
 							+ " filesize='" + filesize +"'," 
 							+ " ext='" + ext +"', " 
@@ -187,7 +193,7 @@ public class H2DBService {
 			Statement stmt;
 			try {
 				stmt = con.createStatement();
-				stmt.execute("UPDATE " + TABLE_NAME + " SET state='" + state + "', "
+				stmt.execute("UPDATE " + DOWNLOAD + " SET state='" + state + "', "
 						+ " filename='" + filename + "'," 
 						+ " filesize='" + filesize +"'," 
 						+ " ext='" + ext +"'," 
@@ -212,7 +218,7 @@ public class H2DBService {
 		try 
 		{
 			Statement stmt = con.createStatement();	        
-	        stmt.execute("INSERT INTO " + TABLE_NAME  + " (url,createtime,state,filename,priority) VALUES ('" + context.getURL() +"','" 
+	        stmt.execute("INSERT INTO " + DOWNLOAD  + " (url,createtime,state,filename,priority) VALUES ('" + context.getURL() +"','" 
 	        		+ new Timestamp(System.currentTimeMillis()) +"','" + DownloadState.WAIT.ordinal() + "','" + null + "','"  
 	        		+ DownloadPriority.NORMAL.ordinal() + "')");	        
 	        stmt.close();
@@ -224,7 +230,7 @@ public class H2DBService {
 		try 
 		{
 			Statement stmt = con.createStatement();	        
-	        stmt.execute("DELETE FROM " + TABLE_NAME);        
+	        stmt.execute("DELETE FROM " + DOWNLOAD);        
 	        stmt.close();
 		} catch (SQLException e) {
 			logger.debug("stmt execute." + e.getLocalizedMessage());
@@ -234,10 +240,211 @@ public class H2DBService {
 		try 
 		{
 			Statement stmt = con.createStatement();	        
-	        stmt.execute("DELETE FROM " + TABLE_NAME  + " WHERE url='" + context.getURL() +"'");        
+	        stmt.execute("DELETE FROM " + DOWNLOAD  + " WHERE url='" + context.getURL() +"'");        
 	        stmt.close();
 		} catch (SQLException e) {
 			logger.debug("stmt execute." + e.getLocalizedMessage());
 		} 
+	}
+	public void createSettingsTable()
+	{
+		try {
+	        Statement stmt = con.createStatement();
+	        stmt.execute("CREATE TABLE " + SETTINGS + " ( "
+	        		+"id VARCHAR(255),"
+	        		+"basePath VARCHAR(255),"
+	        		+"connectTimeout BIGINT,"
+	        		+"readTimeout BIGINT,"
+	        		+"workerCount INT,"
+	         		+"clientCount INT,"
+	         		+"windowX INT,"
+	         		+"windowY INT,"
+	         		+"windowW INT,"
+	         		+"windowH INT,"
+	         		+"proxyType INT,"
+	         		+"proxyHost VARCHAR(255),"
+	         		+"proxyPort INT"
+	        		+ ")");
+	        stmt.close();
+		} catch (SQLException e) {
+			logger.debug("stmt execute." + e.getLocalizedMessage());
+		}
+	}
+	public void initeSettings(Config config) {
+		try 
+		{
+			Statement stmt = con.createStatement();	        
+	        stmt.execute("INSERT INTO " + SETTINGS  + " ( "
+	        		+"id VARCHAR(255),"
+	        		+"basePath VARCHAR(255),"
+	        		+"connectTimeout INT,"
+	        		+"readTimeout INT,"
+	        		+"workerCount INT,"
+	         		+"clientCount INT,"
+	         		+"windowX INT,"
+	         		+"windowY INT,"
+	         		+"windowW INT,"
+	         		+"windowH INT,"
+	         		+"proxyType INT,"
+	         		+"proxyHost VARCHAR(255),"
+	         		+"proxyPort INT"
+	        		+ ") values ("
+	        		+"'" + "tumblrdownloader" +"',"
+	         		+"'" + "./" +"',"
+	         		+"'" + 10000 +"',"
+	         		+"'" + 10000 +"',"
+	         		+"'" + 5 +"',"
+	         		+"'" + 5 +"',"
+	         		+"'" + 100 +"',"
+	         		+"'" + 100 +"',"
+	         		+"'" + 600 +"',"
+	         		+"'" + 400 +"',"
+	         		+"'" + 0 +"',"
+	         		+"'" + null +"',"
+	         		+"'" + 0 +"')");   
+	        stmt.close();
+		} catch (SQLException e) {
+			logger.debug("stmt execute." + e.getLocalizedMessage());
+		} 
+	}
+	public void updateSettings(Config config)
+	{		
+		Statement stmt = null;		
+		try 
+		{
+			stmt = con.createStatement();
+			stmt.execute("UPDATE " + SETTINGS + " SET " 
+					+ " basePath='" 		+ config.basePath 		+ "',"
+					+ " connectTimeout='" 	+ config.connectTimeout + "'," 
+					+ " readTimeout='" 		+ config.readTimeout 	+ "'," 
+					+ " workerCount='" 		+ config.workerCount 	+ "', " 
+					+ " clientCount='" 		+ config.clientCount 	+ "'," 
+					+ " windowX='" 			+ config.windowX 		+ "',"
+					+ " windowY='" 			+ config.windowY 		+ "',"
+					+ " windowW='" 			+ config.windowW 		+ "',"
+					+ " windowH='" 			+ config.windowH 		+ "',"
+					+ " proxyType='" 		+ config.proxy==null? "0" : config.proxy.type().ordinal()	+ "',"
+					+ " proxyHost='" 		+ config.proxy==null? null : ((InetSocketAddress)config.proxy.address()).getHostName()	+ "',"
+					+ " proxyPort='" 		+ config.proxy==null? "0" : ((InetSocketAddress)config.proxy.address()).getPort()	+ "'"
+					+ " WHERE id='" + "tumblrdownloader" +"'");
+		} catch (SQLException e) {
+			logger.debug("stmt execute." + e.getLocalizedMessage());
+		} finally{
+			if(stmt != null)
+			{
+			    try {
+					stmt.close();
+				} catch (SQLException e) {
+					logger.debug("stmt close." + e.getLocalizedMessage());
+				}
+			}
+		}
+	}
+	public void savePath() {
+		
+	}
+	public String loadPath() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	public Proxy loadProxy() {
+		Statement stmt = null;
+		try 
+		{
+			if(con != null)
+			{
+				stmt = con.createStatement();
+				ResultSet rs = stmt.executeQuery("SELECT proxyType, proxyHost, proxyPort FROM " + SETTINGS + " WHERE id='" + "tumblrdownloader" +"'");
+		        if(rs.next())
+		        {
+			        int proxyType = rs.getInt("proxyType");
+			        String proxyHost = rs.getString("proxyHost");
+			        int proxyPort = rs.getInt("proxyPort"); 
+			        return new Proxy(Proxy.Type.values()[proxyType],new InetSocketAddress(proxyHost,proxyPort));
+		        }
+			}
+		} catch (SQLException e) 
+		{			
+			switch(e.getErrorCode() )
+			{
+				case 90020 : {
+								logger.debug("DB locked by another application. [" + DB_URL + "]");
+							}break;					
+				case 42102 : {
+								logger.debug("Create Table [" + DOWNLOAD + "]");
+								createDownloadTable();	
+							}break;
+				default:	{
+								logger.debug("stmt execute." + e.getLocalizedMessage());
+							}break;
+			}
+		}finally{
+			if(stmt != null){
+		        try {
+					stmt.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		return null;
+	}
+	public Config loadSettings() {
+		Statement stmt = null;
+		try 
+		{
+			if(con != null)
+			{
+				stmt = con.createStatement();
+				ResultSet rs = stmt.executeQuery("SELECT * FROM " + SETTINGS + " WHERE id='" + "tumblrdownloader" +"'");
+		        if(rs.next())
+		        {
+					String basePath = rs.getString("basePath");
+					int connectTimeout = rs.getInt("connectTimeout");
+					int readTimeout = rs.getInt("readTimeout");
+					int workerCount = rs.getInt("workerCount");
+					int clientCount = rs.getInt("clientCount");
+					int windowX = rs.getInt("windowX");
+					int windowY = rs.getInt("windowY");
+					int windowW = rs.getInt("windowW");
+					int windowH = rs.getInt("windowH");
+			        int proxyType = rs.getInt("proxyType");
+			        String proxyHost = rs.getString("proxyHost");
+			        int proxyPort = rs.getInt("proxyPort"); 
+			        Proxy proxy = new Proxy(Proxy.Type.values()[proxyType],new InetSocketAddress(proxyHost,proxyPort));
+			        return new Config(basePath, 
+			        		windowX, windowY, windowW, windowH, 
+			        		workerCount, clientCount, 
+			        		connectTimeout, readTimeout, 
+			        		proxy);
+		        }
+			}
+		} catch (SQLException e) 
+		{			
+			switch(e.getErrorCode() )
+			{
+				case 90020 : {
+								logger.debug("DB locked by another application. [" + DB_URL + "]");
+							}break;					
+				case 42102 : {
+								logger.debug("Create Table [" + DOWNLOAD + "]");
+								createDownloadTable();	
+							}break;
+				default:	{
+								logger.debug("stmt execute." + e.getLocalizedMessage());
+							}break;
+			}
+		}finally{
+			if(stmt != null){
+		        try {
+					stmt.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		return null;
 	}
 }

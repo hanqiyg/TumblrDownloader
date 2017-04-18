@@ -1,48 +1,49 @@
 package com.icesoft.tumblr.downloader.dialog;
 
-import java.awt.Font;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 
 import javax.swing.BorderFactory;
-import javax.swing.ComboBoxModel;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ListDataListener;
 
-import com.icesoft.tumblr.downloader.configure.Settings.ProxyType;
-
-import javax.swing.JButton;
-
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.GridLayout;
-import javax.swing.JComboBox;
+import com.icesoft.tumblr.downloader.configure.Settings;
 
 public class ProxyDialog extends JDialog
 {
 	private static final long serialVersionUID = -3518995490315958755L;
 	private JTextField tfProxyHost;
 	private JTextField tfPort;
+	
+	private Proxy proxy = null;
+	private JButton btnSave,btnApply,btnLoad;
 
-
-	private JComboBox<ProxyType> proxyType;
+	private JComboBox<Proxy.Type> proxyType;
 	public ProxyDialog() {
 		this.setTitle("Proxy Settings");
-		this.setMinimumSize(new Dimension(500,250));
+		this.setMinimumSize(new Dimension(380,260));
 		TitledBorder titled = BorderFactory.createTitledBorder
 				(
 					null
 					,"Proxy Settings"
 					,TitledBorder.CENTER
 					,TitledBorder.TOP
-					,new Font("微软雅黑", Font.BOLD, 16)
 				);
 		getContentPane().setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 		
@@ -81,37 +82,27 @@ public class ProxyDialog extends JDialog
 				gbc_lbProxyType.gridy = 0;
 				plConfigure.add(lbProxyType, gbc_lbProxyType);
 				
-				proxyType = new JComboBox<ProxyType>();
-				proxyType.setModel(new ComboBoxModel<ProxyType>(){
-					ProxyType selection = null;
+				proxyType = new JComboBox<Proxy.Type>();
+				DefaultComboBoxModel<Proxy.Type> comboModel = new DefaultComboBoxModel<Proxy.Type>();
+				for(Proxy.Type type : Proxy.Type.values())
+				{
+					comboModel.addElement(type);
+				}
+				proxyType.setModel(comboModel);
+				proxyType.addItemListener(new ItemListener(){
 					@Override
-					public int getSize() {
-						return ProxyType.values().length;
-					}
-					@Override
-					public ProxyType getElementAt(int index) {
-						return ProxyType.values()[index];
-					}
-					@Override
-					public void addListDataListener(ListDataListener l) {
-					}
-					@Override
-					public void removeListDataListener(ListDataListener l) {
-					}
-					@Override
-					public void setSelectedItem(Object anItem) {
-						if(anItem instanceof ProxyType){
-							ProxyType t = (ProxyType) anItem;
-							this.selection = t;
+					public void itemStateChanged(ItemEvent e) {
+						Proxy.Type type = (java.net.Proxy.Type) e.getItem();	
+						if(type.equals(Proxy.Type.DIRECT)){
+							tfProxyHost.setEnabled(false);
+							tfPort.setEnabled(false);
+						}else{
+							tfProxyHost.setEnabled(true);
+							tfPort.setEnabled(true);
 						}
-					}
-
-					@Override
-					public ProxyType getSelectedItem() {
-						return selection;
 					}					
-				});
-				proxyType.setSelectedIndex(0);
+				});		
+				
 				GridBagConstraints gbc_comboBox = new GridBagConstraints();
 				gbc_comboBox.insets = new Insets(0, 0, 5, 0);
 				gbc_comboBox.fill = GridBagConstraints.HORIZONTAL;
@@ -164,49 +155,149 @@ public class ProxyDialog extends JDialog
 				
 				JPanel plTestResult = new JPanel();
 				GridBagConstraints gbc_plTestResult = new GridBagConstraints();
+				gbc_plTestResult.weighty = 1.0;
+				gbc_plTestResult.fill = GridBagConstraints.HORIZONTAL;
 				gbc_plTestResult.gridx = 0;
 				gbc_plTestResult.gridy = 2;
 				gbc_plTestResult.insets = new Insets(5, 5, 0, 0);
-				gbc_plTestResult.fill = GridBagConstraints.HORIZONTAL;
 				plProxySettings.add(plTestResult, gbc_plTestResult);
 				plTestResult.setLayout(new GridLayout(0, 1, 0, 0));
 				
-				JLabel lblTestResult = new JLabel();
+				JLabel lblTestResult = new JLabel("Please test proxy settings before save it.");
 				plTestResult.add(lblTestResult);
+				
+				proxyType.setSelectedIndex(0);
+				tfProxyHost.setEnabled(false);
+				tfPort.setEnabled(false);
 				
 				JButton btnTest = new JButton("Test");
 				btnTest.addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent e) {
-						lblTestResult.setText("checking..");
-						if(checkSettings())
+					public void actionPerformed(ActionEvent e) 
+					{
+						switch((Proxy.Type)proxyType.getSelectedItem())
 						{
-							lblTestResult.setText("Pass.");
-						}
-						else
-						{
-							lblTestResult.setText("fail.");
+						case DIRECT:{
+										lblTestResult.setText("Testing");
+										if(Settings.getInstance().testDirectConnect())
+										{
+											proxy = null;
+											lblTestResult.setText("Pass.");
+											btnApply.setEnabled(true);
+											btnSave.setEnabled(true);	
+										}
+										else
+										{
+											proxy = null;
+											lblTestResult.setText("Fail.");
+											btnApply.setEnabled(false);
+											btnSave.setEnabled(false);											
+										}
+									}break;
+						case HTTP:	{
+										String host = tfProxyHost.getText();
+										int port = 0;
+										try{
+											port = Integer.valueOf(tfPort.getText());
+										}catch(java.lang.NumberFormatException e1){
+											port = 0;
+										}
+										if(host == null || host.isEmpty())
+										{
+											lblTestResult.setText("Host must be filled.");
+											return;
+										}
+										if(port <= 0)
+										{
+											lblTestResult.setText("Port must be filled.");
+											return;
+										}
+										proxy = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(host,port));
+										if(Settings.getInstance().testProxyConnect(proxy))
+										{
+											lblTestResult.setText("Pass.");
+											btnApply.setEnabled(true);
+											btnSave.setEnabled(true);	
+										}
+										else
+										{
+											proxy = null;
+											lblTestResult.setText("Fail.");
+											btnApply.setEnabled(false);
+											btnSave.setEnabled(false);	
+										}
+									}break;
+						case SOCKS:	{
+										String host = tfProxyHost.getText();
+										int port = 0;
+										try{
+											port = Integer.valueOf(tfPort.getText());
+										}catch(java.lang.NumberFormatException e1){
+											port = 0;
+										}
+										
+										if(host == null || host.isEmpty())
+										{
+											lblTestResult.setText("Host must be filled.");
+											return;
+										}
+										if(port <= 0)
+										{
+											lblTestResult.setText("Port must be filled.");
+											return;
+										}
+										proxy = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(host,port));
+										if(Settings.getInstance().testProxyConnect(proxy))
+										{
+											lblTestResult.setText("Pass.");
+											btnApply.setEnabled(true);
+											btnSave.setEnabled(true);	
+										}
+										else
+										{
+											proxy = null;
+											lblTestResult.setText("Fail.");
+											btnApply.setEnabled(false);
+											btnSave.setEnabled(false);	
+										}
+									}break;
+						default:
+							break;						
 						}
 					}
 				});
 				plControl.add(btnTest);
 				
-				JButton btnApply = new JButton("Apply");
+				btnApply = new JButton("Apply");
 				btnApply.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
+						if(proxy != null)
+						{
+							Settings.getInstance().applyProxy(proxy);
+						}
+						else
+						{
+							Settings.getInstance().clearProxyProperties();
+						}
 					}
 				});
 				plControl.add(btnApply);
 				
-				JButton btnSave = new JButton("Save");
+				btnSave = new JButton("Save");
 				btnSave.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
+						Settings.getInstance().saveProxy(proxy);
 					}
 				});
 				plControl.add(btnSave);
 				
-				JButton btnLoad = new JButton("Load");
+				btnLoad = new JButton("Load");
 				btnLoad.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
+						Proxy proxy = Settings.getInstance().loadProxy();
+						proxyType.setSelectedItem(proxy.type());
+						InetSocketAddress add = (InetSocketAddress) proxy.address();
+						tfProxyHost.setText(add.getHostName());
+						tfPort.setText(String.valueOf(add.getPort()));
 					}
 				});
 				plControl.add(btnLoad);
@@ -218,6 +309,8 @@ public class ProxyDialog extends JDialog
 					}
 				});
 				plControl.add(btnCancel);
+				btnApply.setEnabled(false);
+				btnSave.setEnabled(false);	
 	}
 
 /*	private boolean checkSystem() {
@@ -248,9 +341,4 @@ public class ProxyDialog extends JDialog
 		}
 		return false;
 	}*/
-
-	public boolean checkSettings(){
-		return rootPaneCheckingEnabled;
-
-	}
 }

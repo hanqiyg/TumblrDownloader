@@ -38,7 +38,7 @@ public class MainWindow {
 		pro.put("log4j.appender.stdout.layout.ConversionPattern", "[%-5p] %d{yyyy-MM-dd HH:mm:ss,SSS} method:%l%n%m%n");
 
 		pro.put("log4j.appender.R", "org.apache.log4j.RollingFileAppender");
-		pro.put("log4j.appender.R.File", Settings.getInstance().getSaveLocation() + File.separator + "logs" + File.separator + "Info.log");
+		pro.put("log4j.appender.R.File", Settings.getInstance().getPath() + File.separator + "logs" + File.separator + "Info.log");
 		pro.put("log4j.appender.R.MaxFileSize", "10000KB");
 		pro.put("log4j.appender.R.MaxBackupIndex", "20");
 		pro.put("log4j.appender.R.Threshold", "INFO");
@@ -46,7 +46,7 @@ public class MainWindow {
 		pro.put("log4j.appender.R.layout.ConversionPattern", "%-d{yyyy-MM-dd HH:mm:ss}  [ %t:%r ] - [ %p ]  %m%n");
 
 		pro.put("log4j.appender.A", "org.apache.log4j.RollingFileAppender");
-		pro.put("log4j.appender.A.File", Settings.getInstance().getSaveLocation() + File.separator + "logs" + File.separator + "Error.log");
+		pro.put("log4j.appender.A.File", Settings.getInstance().getPath() + File.separator + "logs" + File.separator + "Error.log");
 		pro.put("log4j.appender.A.MaxFileSize", "10000KB");
 		pro.put("log4j.appender.A.MaxBackupIndex", "20");
 		pro.put("log4j.appender.A.Threshold", "ERROR");
@@ -73,7 +73,7 @@ public class MainWindow {
 					{
 						public void windowClosing(WindowEvent e){
 							Rectangle bounds = window.frame.getBounds();
-							Settings.getInstance().setWindowSettings(bounds.x, bounds.y, bounds.width, bounds.height);
+							Settings.getInstance().saveWindowSettings(bounds.x, bounds.y, bounds.width, bounds.height);
 							int w = window.frame.getWidth() / 2;
 							int h = window.frame.getHeight() / 2;
 							int x = window.frame.getX() + w /2;
@@ -118,10 +118,10 @@ public class MainWindow {
 		//services = new TumblrServices();
 		frame = new JFrame();		
 		frame.setBounds(
-					Settings.getInstance().getWindowSetting().getX(),
-					Settings.getInstance().getWindowSetting().getY(),
-					Settings.getInstance().getWindowSetting().getW(),
-					Settings.getInstance().getWindowSetting().getH()
+					Settings.getInstance().getWindowX(),
+					Settings.getInstance().getWindowY(),
+					Settings.getInstance().getWindowW(),
+					Settings.getInstance().getWindowH()
 				);		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		

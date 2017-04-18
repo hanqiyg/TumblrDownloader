@@ -10,6 +10,7 @@ import javax.swing.JTextField;
 import org.apache.log4j.Logger;
 
 import com.icesoft.tumblr.downloader.configure.Settings;
+import com.icesoft.tumblr.downloader.dialog.PathDialog;
 import com.icesoft.tumblr.downloader.dialog.ProxyDialog;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.settings.TumblrToken;
@@ -35,10 +36,10 @@ public class SettingsPanel extends JPanel {
 
 	public SettingsPanel() {
 		GridBagLayout gridBagLayout = new GridBagLayout();
-		gridBagLayout.rowHeights = new int[] {0, 0, 0};
+		gridBagLayout.rowHeights = new int[] {0, 0, 0, 0};
 		gridBagLayout.columnWidths = new int[] {0};
 		gridBagLayout.columnWeights = new double[]{1.0};
-		gridBagLayout.rowWeights = new double[]{0.0, 1.0, 0.0};
+		gridBagLayout.rowWeights = new double[]{0.0, 1.0, 0.0, 0.0};
 		setLayout(gridBagLayout);
 		
 		JPanel plKey = new JPanel();
@@ -342,9 +343,32 @@ public class SettingsPanel extends JPanel {
 				pd.setVisible(true);
 			}
 		});
+		
+		JButton btnPathSettings = new JButton("Path Settings");
+		btnPathSettings.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				PathDialog pd = new PathDialog();
+				int width = (SettingsPanel.this.getWidth() / 2) < pd.getMinimumSize().width
+						?pd.getMinimumSize().width
+						:SettingsPanel.this.getWidth() / 2;
+				int height = (SettingsPanel.this.getHeight() / 2) < pd.getMinimumSize().height
+						?pd.getMinimumSize().height
+						:SettingsPanel.this.getHeight() / 2 ;
+				int x = SettingsPanel.this.getX() + width / 2;
+				int y = SettingsPanel.this.getY() + height / 2;
+				pd.setBounds(x, y, width, height);
+				pd.setModal(true);
+				pd.setVisible(true);
+			}
+		});
+		GridBagConstraints gbc_btnPathSettings = new GridBagConstraints();
+		gbc_btnPathSettings.insets = new Insets(0, 0, 5, 0);
+		gbc_btnPathSettings.gridx = 0;
+		gbc_btnPathSettings.gridy = 2;
+		add(btnPathSettings, gbc_btnPathSettings);
 		GridBagConstraints gbc_btnProxySettings = new GridBagConstraints();
 		gbc_btnProxySettings.gridx = 0;
-		gbc_btnProxySettings.gridy = 2;
+		gbc_btnProxySettings.gridy = 3;
 		add(btnProxySettings, gbc_btnProxySettings);
 
 		

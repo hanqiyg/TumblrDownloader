@@ -5,13 +5,11 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.pool.PoolStats;
@@ -24,7 +22,7 @@ import com.icesoft.tumblr.downloader.monitor.IdleConnectionMonitor;
 
 public class HttpClientConnectionManager 
 {
-	private static final int TIMEOUT = 10 * 1000;
+	private static final int TIMEOUT = 50 * 1000;
 	private static Logger logger = Logger.getLogger(HttpClientConnectionManager.class);  
 	private PoolingHttpClientConnectionManager connManager;
 	private IdleConnectionMonitor monitor;
@@ -52,28 +50,24 @@ public class HttpClientConnectionManager
 		                } catch(NumberFormatException ignore) {}
 		            }
 		        }
-		        return 50 * 1000;
+		        return TIMEOUT;
 		    }
 		};
 	   RequestConfig requestConfig = RequestConfig.custom()
-	            .setConnectionRequestTimeout(TIMEOUT)
-	            .setSocketTimeout(TIMEOUT)
-	            .setConnectionRequestTimeout(TIMEOUT)
+	            .setConnectionRequestTimeout(Settings.getInstance().getConnectionTimeout())
+	            .setSocketTimeout(Settings.getInstance().readTimeout())
+	            .setConnectionRequestTimeout(Settings.getInstance().readTimeout())
 	            .build();
-		HttpHost proxy = new HttpHost(
-				Settings.getInstance().getProxySettings().getHost(),
-				Settings.getInstance().getProxySettings().getPort()						
-				);
-		DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
 		connManager = new PoolingHttpClientConnectionManager();
 		connManager.setDefaultMaxPerRoute(5);
 		connManager.setMaxTotal(Settings.getInstance().getHttpClientCount());
-		client = HttpClients.custom()
-				  .setConnectionManager(connManager)
-				  .setDefaultRequestConfig(requestConfig)
-				  .setRoutePlanner(routePlanner)
-				  .setKeepAliveStrategy(myStrategy)				
-				  .build();
+		client = HttpClientBuilder
+				.create()
+				.setConnectionManager(connManager)
+				.useSystemProperties()				
+				.setDefaultRequestConfig(requestConfig)				  
+				.setKeepAliveStrategy(myStrategy)				
+				.build();
 		monitor = new IdleConnectionMonitor(this);
 		monitor.start();		
 	}

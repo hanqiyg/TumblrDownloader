@@ -1,274 +1,182 @@
 package com.icesoft.tumblr.downloader.configure;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
-import java.net.SocketAddress;
 import java.net.URL;
-import java.util.prefs.BackingStoreException;
-import java.util.prefs.Preferences;
-
 import org.apache.log4j.Logger;
 
-import com.icesoft.tumblr.downloader.configure.Constants.DownloadManagerConfigure;
-import com.icesoft.tumblr.downloader.configure.Constants.HttpClientConnectionManagerConfigure;
-import com.icesoft.tumblr.settings.ProxySettings;
+import com.icesoft.tumblr.downloader.service.H2DBService;
 import com.icesoft.tumblr.settings.TumblrToken;
-import com.icesoft.tumblr.settings.WindowSettings;
 
 public class Settings {
 	private static Logger logger = Logger.getLogger(Settings.class);
-	public static final String PACKAGE_NAME = "com.icesoft.tumblr.Settings";
-	public static final String UNNAMEDBLOG = "UnnamedBlog";
-
-	public int buffer_size = 1024;
-	
-	public int connect_timeout = 20000;
-	public int read_timeout = 20000;
-	
-	private String save_location;
-	
-	private int workerCount;
-	private int httpClientCount;	
-
 	private static Settings instance = new Settings();
-	private TumblrToken token;
-	private WindowSettings windowSettings;
-	private ProxySettings proxySettings;
-	private Preferences prefs;
+
+	private Config config;
 	
 	private Settings(){
-		prefs = Preferences.userRoot().node(PACKAGE_NAME);
+		load();
+	}
+	private void load(){
+		config = H2DBService.getInstance().loadSettings();
 	}
 	
 	public static Settings getInstance(){
 		return instance;
 	}
-	public void setSaveLocation(String location){
-		this.save_location = location;
-	}	
-	public String getSaveLocation(){
-		if(save_location == null)
-		{
-			save_location = prefs.get("Save.Location", "./");
-		}
-		return save_location;
-	}
-	public void saveLocation(){
-		if(save_location != null)
-		{
-			prefs.put("Save.Location", "d:/tumblr");
-			try {
-				prefs.flush();
-			} catch (BackingStoreException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	public void setToken(TumblrToken token){
-		this.token = token;
-	}
-	public void saveToken(TumblrToken token){
-		try {
-			prefs.put("consumer_key", 		token.getConsumer_key());
-			prefs.put("consumer_secret", 	token.getConsumer_secret());
-			prefs.put("oauth_token", 		token.getOauth_token());
-			prefs.put("oauth_token_secret", token.getOauth_token_secret());
-			prefs.flush();
-		} catch (BackingStoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	public static final String consumer_key = "MfA6BDjf9VUaGZhk0Qzc9mQxMoqrGAGbYNsLBM6i8ZZQDTQYaQ";
-	public static final String consumer_secret = "zXRjmPNWZ4lNtZ9TK5gvuQ0qsGEzB5IpGRdt3XyVkf9o910apy";
-	public static final String oauth_token = "qcTky7QPyOiTsmFQTfJCQbblSgcg8JNhKJg7pKEXr1BlBuAKWB";
-	public static final String oauth_token_secret = "uvtpgLFPIq3dGTTSxqG1pQSoSKgV6GXR4ZgsYeKBzl6Bq2by1q";
-	
-	public TumblrToken getToken(){
-		if(token == null)
-		{
-			token = new TumblrToken(
-			prefs.get("consumer_key", consumer_key),			
-			prefs.get("consumer_secret",consumer_secret),
-			prefs.get("oauth_token", oauth_token),
-			prefs.get("oauth_token_secret", oauth_token_secret));
-		}
-		return token;
-	}
 
-	public void setWindowSettings(int x, int y,int w,int h){
-		if(windowSettings != null){
-			windowSettings.setX(x);
-			windowSettings.setY(y);
-			windowSettings.setW(w);
-			windowSettings.setH(h);
-		}else{
-			windowSettings = new WindowSettings(x,y,w,h);
-		}
-		saveWindowSettings(windowSettings);
-	}
-	public void saveWindowSettings(WindowSettings windowSettings){
-		try {
-			prefs.putInt("Window.X", windowSettings.getX());
-			prefs.putInt("Window.Y", windowSettings.getY());
-			prefs.putInt("Window.W", windowSettings.getW());
-			prefs.putInt("Window.H", windowSettings.getH());	
-			prefs.flush();
-		} catch (BackingStoreException e) {
-			logger.error("SaveWindowSettings error:" + e.getMessage());
-		}
-	}
-	
-	public WindowSettings getWindowSetting(){
-		if(windowSettings == null){
-			windowSettings = new WindowSettings(
-					prefs.getInt("Window.X", 100),
-					prefs.getInt("Window.Y", 100),
-					prefs.getInt("Window.W", 450),
-					prefs.getInt("Window.H", 300));
-		}
-		return windowSettings;
-	}
-
-	public ProxySettings getProxySettings() {
-		if(proxySettings == null){
-			proxySettings = new ProxySettings(
-					prefs.get("Proxy.Type", ProxySettings.Type.SOCKS.toString()),
-					prefs.get("Proxy.Host", "127.0.0.1"),
-					prefs.getInt("Proxy.Port", 1080));
-		}
-		return proxySettings;
-	}
-
-	public void setProxySettings(ProxySettings proxySettings) {
-		this.proxySettings = proxySettings;
-	}
-	public void saveProxySettings(ProxySettings proxySettings)
-	{
-		try {
-			prefs.put("Proxy.Type",		proxySettings.getType().toString());
-			prefs.put("Proxy.Host", 	proxySettings.getHost());
-			prefs.putInt("Proxy.Port", 	proxySettings.getPort());
-			prefs.flush();
-		} catch (BackingStoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	public int getWorkerCount() {
-		if(this.workerCount <= 0){
-			this.workerCount = prefs.getInt(DownloadManagerConfigure.WorkerCount.getKey(), 
-					DownloadManagerConfigure.WorkerCount.getValue());
-		}
-		return workerCount;
-	}
-
-	public void saveWorkerCount(){
-		if(this.workerCount <= 0){
-			this.workerCount = DownloadManagerConfigure.WorkerCount.getValue();
-		}
-		try {
-			prefs.putInt(DownloadManagerConfigure.WorkerCount.getKey(),	this.workerCount);
-			prefs.flush();
-		} catch (BackingStoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	public void setWorkerCount(int workerCount) {
-		this.workerCount = workerCount;
-	}
-	public int getHttpClientCount() {
-		if(this.httpClientCount <= 0){
-			this.httpClientCount = prefs.getInt(HttpClientConnectionManagerConfigure.MaxTotal.getKey(),
-					HttpClientConnectionManagerConfigure.MaxTotal.getValue());
-		}
-		return httpClientCount;
-	}
-	public void setHttpClientCount(int httpClientCount) {
-		this.httpClientCount = httpClientCount;
-	}
-	public void saveHttpClientCount(){
-		if(this.httpClientCount <= 0){
-			this.httpClientCount = HttpClientConnectionManagerConfigure.MaxTotal.getValue();
-		}
-		try {
-			prefs.putInt(HttpClientConnectionManagerConfigure.MaxTotal.getKey(),	this.httpClientCount);
-			prefs.flush();
-		} catch (BackingStoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	public enum ProxyType{
-		DIRECT,HTTP,SOCKS
-	};
-	public boolean testConnect(ProxyType type,String host,int port){
+	public boolean testProxyConnect(Proxy proxy){
 		HttpURLConnection connection = null;
 		try {
-			URL url = new URL("https://tumblr.com/");
-			Proxy proxy = null;
-			SocketAddress addr = new
-					InetSocketAddress(host, port);
-			switch(type)
-			{
-				case HTTP:	proxy = new Proxy(Proxy.Type.HTTP, addr);
-					break;
-				case SOCKS:	proxy = new Proxy(Proxy.Type.SOCKS, addr);
-					break;
-				case DIRECT:
-					break;
-				default:
-					break;
-			}
-			if(proxy == null)
-			{
-				connection = (HttpURLConnection)url.openConnection();
-			}
-			else
-			{
-				connection = (HttpURLConnection)url.openConnection(proxy);
-			}		    
+			URL url = new URL("https://www.tumblr.com/");
+			connection = (HttpURLConnection)url.openConnection(proxy);				    
 		    connection.setConnectTimeout(10 * 1000);
 		    connection.setReadTimeout(10 * 1000);
 		    connection.setRequestMethod("GET");
 		    connection.connect();
 			return true;
 		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
 			return false;
 		} catch (IOException e) {
+			//e.printStackTrace();
 			return false;
 		}finally{
 			connection.disconnect();
 			connection = null;
 		}
 	}
+	public boolean testDirectConnect(){
+		HttpURLConnection connection = null;
+		try {
+			URL url = new URL("https://www.tumblr.com/");
+			connection = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY); 
+		    connection.setConnectTimeout(10 * 1000);
+		    connection.setRequestMethod("GET");
+		    connection.connect();
+			return true;
+		} catch (IOException e) {
+			//e.printStackTrace();
+			return false;
+		}finally{
+			connection.disconnect();
+			connection = null;
+		}
+	}
+	public void applyProxy(Proxy proxy){
+		switch(proxy.type())
+		{
+		case DIRECT:
+		{
+			clearProxyProperties();
+		}
+			break;
+		case HTTP:
+		{
+			clearProxyProperties();
+			InetSocketAddress sa = (InetSocketAddress) proxy.address();
+			System.getProperties().setProperty("http.proxyHost", sa.getHostName());
+			System.getProperties().setProperty("http.proxyPort", String.valueOf(sa.getPort()));
+		}
+			break;
+		case SOCKS:{
+			clearProxyProperties();
+			InetSocketAddress sa = (InetSocketAddress) proxy.address();
+			System.getProperties().setProperty("http.socksProxyHost", sa.getHostName());
+			System.getProperties().setProperty("http.socksProxyPort", String.valueOf(sa.getPort()));
+		}
+			break;
+		default:
+			break;		
+		}
+	}
 	public void clearProxyProperties()
 	{
 		System.clearProperty("http.proxyHost");
 		System.clearProperty("http.proxyPort");
+		System.clearProperty("https.proxyHost");
+		System.clearProperty("https.proxyPort");
 		System.clearProperty("socksProxyHost");
 		System.clearProperty("socksProxyPort");
 	}
-	private String httpproxyHost = null;
-	private String httpproxyPort = null;
-	private String socksProxyHost = null;
-	private String socksProxyPort = null;
-	
-	public void saveProxyProperties()
+	public Proxy loadProxy() 
 	{
-		httpproxyHost = System.getProperty("http.proxyHost");
-		httpproxyPort = System.getProperty("http.proxyPort");
-		socksProxyHost = System.getProperty("socksProxyHost");
-		socksProxyPort = System.getProperty("socksProxyPort");
+		config.proxy = H2DBService.getInstance().loadProxy();
+		return config.proxy;
+	}
+	public void saveProxy(Proxy proxy)
+	{
+		this.config.proxy = proxy;
+	}
+	public Proxy getProxy(){
+		return this.config.proxy;
+	}
+
+
+	private String basePath;
+	public boolean testPath(String path) {
+		File file = new File(path);
+		if(file.exists()){
+			if(file.isDirectory()){
+				return true;
+			}else{
+				return false;
+			}
+		}else{
+			if(file.mkdirs()){
+				return true;
+			}else{
+				return false;
+			}
+		}
+	}
+	public void applyPath(String path) {
+		this.basePath = path;
+	}
+	public void savePath(String path){
+		applyPath(path);
+		H2DBService.getInstance().savePath();
+	}
+	public String loadPath(){
+		String path = H2DBService.getInstance().loadPath();
+		this.basePath = path==null ? "./" : path;
+		return config.basePath;
+	}
+	public String getPath(){
+		return config.basePath;
+	}
+	public void saveWindowSettings(int x, int y, int width, int height) {
+		config.windowX = x;
+		config.windowY = y;
+		config.windowW = width;
+		config.windowH = height;
+		H2DBService.getInstance().updateSettings(config);
+	}
+	public int getWindowX() {
+		return config.windowX;
+	}
+	public int getWindowY() {
+		return config.windowY;
+	}
+	public int getWindowW() {
+		return config.windowW;
+	}
+	public int getWindowH() {
+		return config.windowH;
+	}
+	public int getHttpClientCount() {
+		return config.clientCount;
+	}
+	public int getConnectionTimeout() {
+		return config.connectTimeout;
+	}
+	public int readTimeout() {
+		return config.readTimeout;
 	}
 }
+
 
