@@ -7,6 +7,7 @@ public class Config{
 	public int windowX,windowY,windowW,windowH;
 	public int workerCount,clientCount;
 	public int connectTimeout,readTimeout;
+	public String consumerKey,consumerSecret,oauthToken,oauthTokenSecret;
 	public Proxy proxy;
 		public Config(){
 		this.basePath = "./";
@@ -21,7 +22,8 @@ public class Config{
 		this.proxy = null;
 	}
 	public Config(String basePath,int windowX, int windowY, int windowW, int windowH,
-			int workerCount, int clientCount, int connectTimeout, int readTimeout, Proxy proxy){
+			int workerCount, int clientCount, int connectTimeout, int readTimeout, Proxy proxy,
+			String consumerKey,String consumerSecret,String oauthToken,String oauthTokenSecret){
 		this.basePath = basePath;
 		this.windowX = windowX;
 		this.windowY = windowY;
@@ -32,5 +34,9 @@ public class Config{
 		this.connectTimeout = connectTimeout;
 		this.readTimeout = readTimeout;
 		this.proxy = proxy;
+		this.consumerKey = consumerKey;
+		this.consumerSecret = consumerSecret;
+		this.oauthToken = oauthToken;
+		this.oauthTokenSecret = oauthTokenSecret;
 	}
 }

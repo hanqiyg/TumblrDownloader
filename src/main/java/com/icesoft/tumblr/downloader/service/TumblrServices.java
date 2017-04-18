@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.icesoft.tumblr.downloader.configure.Constants;
 import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.settings.TumblrToken;
 import com.tumblr.jumblr.JumblrClient;
@@ -50,12 +51,12 @@ public class TumblrServices {
 		try{
 			logger.debug("Jumblr Service -> connecting.");
 				client = new JumblrClient(
-						Settings.getInstance().getToken().getConsumer_key(),
-						Settings.getInstance().getToken().getConsumer_secret()
+						Settings.getInstance().getConsumerKey(),
+						Settings.getInstance().getConsumerSecret()
 						);
 				client.setToken(
-						Settings.getInstance().getToken().getOauth_token(),
-						Settings.getInstance().getToken().getOauth_token_secret());
+						Settings.getInstance().getOauthToken(),
+						Settings.getInstance().getOauthTokenSecret());
 			user = client.user();
 			return true;
 		}catch(Exception e){
@@ -120,7 +121,7 @@ public class TumblrServices {
 		if(blogName != null && !blogName.trim().equals("")){
 			return blogName;
 		}else{
-			return Settings.UNNAMEDBLOG;
+			return Constants.UNNAMEDBLOG;
 		}
 	}
 	public String getBlogId(Post post){

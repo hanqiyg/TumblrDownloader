@@ -264,6 +264,10 @@ public class H2DBService {
 	         		+"proxyType INT,"
 	         		+"proxyHost VARCHAR(255),"
 	         		+"proxyPort INT"
+	        		+"consumerKey VARCHAR(255),"
+	         		+"consumerSecret VARCHAR(255),"
+	         		+"oauthToken VARCHAR(255),"
+	         		+"oauthTokenSecret VARCHAR(255)"
 	        		+ ")");
 	        stmt.close();
 		} catch (SQLException e) {
@@ -275,19 +279,23 @@ public class H2DBService {
 		{
 			Statement stmt = con.createStatement();	        
 	        stmt.execute("INSERT INTO " + SETTINGS  + " ( "
-	        		+"id VARCHAR(255),"
-	        		+"basePath VARCHAR(255),"
-	        		+"connectTimeout INT,"
-	        		+"readTimeout INT,"
-	        		+"workerCount INT,"
-	         		+"clientCount INT,"
-	         		+"windowX INT,"
-	         		+"windowY INT,"
-	         		+"windowW INT,"
-	         		+"windowH INT,"
-	         		+"proxyType INT,"
-	         		+"proxyHost VARCHAR(255),"
-	         		+"proxyPort INT"
+	        		+"id,"
+	        		+"basePath,"
+	        		+"connectTimeout,"
+	        		+"readTimeout,"
+	        		+"workerCount,"
+	         		+"clientCount,"
+	         		+"windowX,"
+	         		+"windowY,"
+	         		+"windowW,"
+	         		+"windowH,"
+	         		+"proxyType,"
+	         		+"proxyHost,"
+	         		+"proxyPort,"
+	         		+"consumerKey,"
+	         		+"consumerSecret,"
+	         		+"oauthToken,"
+	         		+"oauthTokenSecret,"
 	        		+ ") values ("
 	        		+"'" + "tumblrdownloader" +"',"
 	         		+"'" + "./" +"',"
@@ -301,7 +309,12 @@ public class H2DBService {
 	         		+"'" + 400 +"',"
 	         		+"'" + 0 +"',"
 	         		+"'" + null +"',"
-	         		+"'" + 0 +"')");   
+	         		+"'" + 0 +"',"
+	         		+"'" + null +"',"
+	         		+"'" + null +"',"
+	         		+"'" + null +"',"
+	         		+"'" + null +"'"
+	         		+")");   
 	        stmt.close();
 		} catch (SQLException e) {
 			logger.debug("stmt execute." + e.getLocalizedMessage());
@@ -314,18 +327,22 @@ public class H2DBService {
 		{
 			stmt = con.createStatement();
 			stmt.execute("UPDATE " + SETTINGS + " SET " 
-					+ " basePath='" 		+ config.basePath 		+ "',"
-					+ " connectTimeout='" 	+ config.connectTimeout + "'," 
-					+ " readTimeout='" 		+ config.readTimeout 	+ "'," 
-					+ " workerCount='" 		+ config.workerCount 	+ "', " 
-					+ " clientCount='" 		+ config.clientCount 	+ "'," 
-					+ " windowX='" 			+ config.windowX 		+ "',"
-					+ " windowY='" 			+ config.windowY 		+ "',"
-					+ " windowW='" 			+ config.windowW 		+ "',"
-					+ " windowH='" 			+ config.windowH 		+ "',"
+					+ " basePath='" 		+ config.basePath 			+ "',"
+					+ " connectTimeout='" 	+ config.connectTimeout 	+ "'," 
+					+ " readTimeout='" 		+ config.readTimeout 		+ "'," 
+					+ " workerCount='" 		+ config.workerCount 		+ "', " 
+					+ " clientCount='" 		+ config.clientCount 		+ "'," 
+					+ " windowX='" 			+ config.windowX 			+ "',"
+					+ " windowY='" 			+ config.windowY 			+ "',"
+					+ " windowW='" 			+ config.windowW 			+ "',"
+					+ " windowH='" 			+ config.windowH 			+ "',"
 					+ " proxyType='" 		+ config.proxy==null? "0" : config.proxy.type().ordinal()	+ "',"
 					+ " proxyHost='" 		+ config.proxy==null? null : ((InetSocketAddress)config.proxy.address()).getHostName()	+ "',"
 					+ " proxyPort='" 		+ config.proxy==null? "0" : ((InetSocketAddress)config.proxy.address()).getPort()	+ "'"
+					+ " consumerKey='" 		+ config.consumerKey 		+ "',"
+					+ " consumerSecret='" 	+ config.consumerSecret 	+ "',"
+					+ " oauthToken='" 		+ config.oauthToken 		+ "',"
+					+ " oauthTokenSecret='" + config.oauthTokenSecret 	+ "',"
 					+ " WHERE id='" + "tumblrdownloader" +"'");
 		} catch (SQLException e) {
 			logger.debug("stmt execute." + e.getLocalizedMessage());
@@ -413,11 +430,15 @@ public class H2DBService {
 			        String proxyHost = rs.getString("proxyHost");
 			        int proxyPort = rs.getInt("proxyPort"); 
 			        Proxy proxy = new Proxy(Proxy.Type.values()[proxyType],new InetSocketAddress(proxyHost,proxyPort));
+					String consumerKey = rs.getString("consumerKey");
+					String consumerSecret =  rs.getString("consumerSecret");
+					String oauthToken =  rs.getString("oauthToken");
+					String oauthTokenSecret =  rs.getString("oauthTokenSecret");
 			        return new Config(basePath, 
 			        		windowX, windowY, windowW, windowH, 
 			        		workerCount, clientCount, 
 			        		connectTimeout, readTimeout, 
-			        		proxy);
+			        		proxy,consumerKey,consumerSecret,oauthToken,oauthTokenSecret);
 		        }
 			}
 		} catch (SQLException e) 

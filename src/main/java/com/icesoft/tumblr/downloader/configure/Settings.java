@@ -115,9 +115,6 @@ public class Settings {
 	public Proxy getProxy(){
 		return this.config.proxy;
 	}
-
-
-	private String basePath;
 	public boolean testPath(String path) {
 		File file = new File(path);
 		if(file.exists()){
@@ -135,7 +132,7 @@ public class Settings {
 		}
 	}
 	public void applyPath(String path) {
-		this.basePath = path;
+		config.basePath = path;
 	}
 	public void savePath(String path){
 		applyPath(path);
@@ -143,7 +140,7 @@ public class Settings {
 	}
 	public String loadPath(){
 		String path = H2DBService.getInstance().loadPath();
-		this.basePath = path==null ? "./" : path;
+		config.basePath = path==null ? "./" : path;
 		return config.basePath;
 	}
 	public String getPath(){
@@ -176,6 +173,18 @@ public class Settings {
 	}
 	public int readTimeout() {
 		return config.readTimeout;
+	}
+	public String getConsumerKey() {
+		return config.consumerKey;
+	}
+	public String getConsumerSecret() {
+		return config.consumerSecret;
+	}
+	public String getOauthToken() {
+		return config.oauthToken;
+	}
+	public String getOauthTokenSecret() {
+		return config.oauthTokenSecret;
 	}
 }
 
