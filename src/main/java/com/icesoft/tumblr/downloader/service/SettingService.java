@@ -1,4 +1,4 @@
-package com.icesoft.tumblr.downloader.configure;
+package com.icesoft.tumblr.downloader.service;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,29 +7,36 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.Properties;
+
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
+import com.icesoft.tumblr.downloader.configure.Config;
+import com.icesoft.tumblr.downloader.configure.TumblrToken;
 import com.icesoft.tumblr.downloader.service.H2DBService;
-import com.icesoft.tumblr.settings.TumblrToken;
 
-public class Settings {
-	private static Logger logger = Logger.getLogger(Settings.class);
-	private static Settings instance = new Settings();
-
+public class SettingService {
+	private static SettingService instance = new SettingService();
+	private static Logger logger = Logger.getLogger(SettingService.class);
 	private Config config;
 	
-	private Settings(){
+	private SettingService(){
 		load();
 	}
 	private void load(){
+		System.out.print("============== Load Config Begin ==============" + "\n\r");
 		config = H2DBService.getInstance().loadSettings();
+		System.out.print(config.toString());
+		System.out.print("============== Load Config End   ==============" + "\n\r");
 	}
 	
-	public static Settings getInstance(){
+	public static SettingService getInstance(){
 		return instance;
 	}
 
 	public boolean testProxyConnect(Proxy proxy){
+		System.out.println("testProxyConnect @ " + proxy.toString());
 		HttpURLConnection connection = null;
 		try {
 			URL url = new URL("https://www.tumblr.com/");
@@ -40,10 +47,10 @@ public class Settings {
 		    connection.connect();
 			return true;
 		} catch (MalformedURLException e) {
-			//e.printStackTrace();
+			e.printStackTrace();
 			return false;
 		} catch (IOException e) {
-			//e.printStackTrace();
+			e.printStackTrace();
 			return false;
 		}finally{
 			connection.disconnect();
@@ -51,6 +58,7 @@ public class Settings {
 		}
 	}
 	public boolean testDirectConnect(){
+		System.out.println("testDirectConnect");
 		HttpURLConnection connection = null;
 		try {
 			URL url = new URL("https://www.tumblr.com/");
@@ -60,7 +68,7 @@ public class Settings {
 		    connection.connect();
 			return true;
 		} catch (IOException e) {
-			//e.printStackTrace();
+			e.printStackTrace();
 			return false;
 		}finally{
 			connection.disconnect();
@@ -68,6 +76,11 @@ public class Settings {
 		}
 	}
 	public void applyProxy(Proxy proxy){
+		config.proxy = proxy;
+		if(proxy == null){
+			clearProxyProperties();
+			return;
+		}
 		switch(proxy.type())
 		{
 		case DIRECT:
@@ -110,7 +123,8 @@ public class Settings {
 	}
 	public void saveProxy(Proxy proxy)
 	{
-		this.config.proxy = proxy;
+		applyProxy(proxy);
+		H2DBService.getInstance().updateProxy(proxy);
 	}
 	public Proxy getProxy(){
 		return this.config.proxy;
@@ -136,7 +150,7 @@ public class Settings {
 	}
 	public void savePath(String path){
 		applyPath(path);
-		H2DBService.getInstance().savePath();
+		H2DBService.getInstance().updatePath(path);
 	}
 	public String loadPath(){
 		String path = H2DBService.getInstance().loadPath();
@@ -147,11 +161,7 @@ public class Settings {
 		return config.basePath;
 	}
 	public void saveWindowSettings(int x, int y, int width, int height) {
-		config.windowX = x;
-		config.windowY = y;
-		config.windowW = width;
-		config.windowH = height;
-		H2DBService.getInstance().updateSettings(config);
+		H2DBService.getInstance().updateWindowSettings(x, y, width, height);
 	}
 	public int getWindowX() {
 		return config.windowX;
@@ -174,17 +184,19 @@ public class Settings {
 	public int readTimeout() {
 		return config.readTimeout;
 	}
-	public String getConsumerKey() {
-		return config.consumerKey;
+	public TumblrToken getToken(){
+		return config.token;
 	}
-	public String getConsumerSecret() {
-		return config.consumerSecret;
+	public void applyToken(TumblrToken token){
+		config.token = token;
 	}
-	public String getOauthToken() {
-		return config.oauthToken;
+	public TumblrToken loadToken(){
+		config.token = H2DBService.getInstance().loadToken();
+		return config.token;
 	}
-	public String getOauthTokenSecret() {
-		return config.oauthTokenSecret;
+	public void saveToken(TumblrToken token){
+		config.token = token;
+		H2DBService.getInstance().updateToken(token);
 	}
 }
 

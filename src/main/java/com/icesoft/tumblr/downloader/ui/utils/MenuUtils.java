@@ -119,7 +119,7 @@ public class MenuUtils {
 				{
 					IContext context = iter.next();
 					DownloadManager.getInstance().removeTask(context, true);
-					DownloadManager.getInstance().addNewTask(context.getURL(),context.getSavePath());
+					DownloadManager.getInstance().addNewTask(context.getURL(),context.getSavePath(),context.getBlogId(),context.getBlogName());
             	}
 				model.fireTableDataChanged();
             }

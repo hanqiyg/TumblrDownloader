@@ -19,6 +19,7 @@ import com.icesoft.tumblr.downloader.workers.HttpGetWorker;
 import com.icesoft.tumblr.executors.Contextful;
 import com.icesoft.tumblr.executors.PriorityThreadPoolExecutor;
 import com.icesoft.tumblr.handlers.RejectedExecutionHandlerImpl;
+import com.icesoft.tumblr.model.VideoInfo;
 import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
 
@@ -238,11 +239,10 @@ public class DownloadManager {
 			}
 		}
 	}
-	public void addNewTask(String url,String savePath) {
-		DownloadContext c = new DownloadContext(url,DownloadState.CREATE, savePath);
+	public void addNewTask(String url,String savePath,String blogId,String blogName) {
+		DownloadContext c = new DownloadContext(url,DownloadState.CREATE, savePath,blogId,blogName);
 		addNewTask(c);
 	}
-
 	public void addNewTask(IContext context) {
 		synchronized(contexts)
 		{

@@ -9,6 +9,9 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -18,7 +21,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 
-import com.icesoft.tumblr.downloader.configure.Settings;
+import com.icesoft.tumblr.downloader.service.SettingService;
+
 
 public class PathDialog extends JDialog
 {
@@ -125,7 +129,7 @@ public class PathDialog extends JDialog
 						}
 						else
 						{
-							if(Settings.getInstance().testPath(path))
+							if(SettingService.getInstance().testPath(path))
 							{
 								lblTestResult.setText("Pass.");
 								btnApply.setEnabled(true);
@@ -143,7 +147,11 @@ public class PathDialog extends JDialog
 				btnApply = new JButton("Apply");
 				btnApply.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						Settings.getInstance().applyPath(tfPath.getText().trim());
+						String path = UIToData();
+						if(path != null)
+						{
+							SettingService.getInstance().applyPath(path);
+						}
 					}
 				});
 				plControl.add(btnApply);
@@ -151,7 +159,11 @@ public class PathDialog extends JDialog
 				btnSave = new JButton("Save");
 				btnSave.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						Settings.getInstance().savePath(tfPath.getText().trim());
+						String path = UIToData();
+						if(path != null)
+						{
+							SettingService.getInstance().savePath(path);
+						}
 					}
 				});
 				plControl.add(btnSave);
@@ -159,9 +171,8 @@ public class PathDialog extends JDialog
 				btnLoad = new JButton("Load");
 				btnLoad.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						Settings.getInstance().loadPath();
-						String path = Settings.getInstance().getPath();
-						tfPath.setText((new File(path)).getAbsolutePath());
+						SettingService.getInstance().loadPath();
+						DataToUI();
 					}
 				});
 				plControl.add(btnLoad);
@@ -175,5 +186,16 @@ public class PathDialog extends JDialog
 				plControl.add(btnCancel);
 				btnApply.setEnabled(false);
 				btnSave.setEnabled(false);	
+				DataToUI();
+	}
+	public void DataToUI()
+	{
+		tfPath.setText(SettingService.getInstance().getPath());
+	}
+	public String UIToData(){
+		if(tfPath.getText() != null && !tfPath.getText().trim().isEmpty()){
+			return tfPath.getText().trim();
+		}
+		return null;
 	}
 }

@@ -2,6 +2,7 @@ package com.icesoft.tumblr.downloader.service;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.SocketAddress;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -11,11 +12,12 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.icesoft.tumblr.contexts.DownloadContext;
 import com.icesoft.tumblr.downloader.configure.Config;
-import com.icesoft.tumblr.downloader.configure.Settings;
+import com.icesoft.tumblr.downloader.configure.TumblrToken;
 import com.icesoft.tumblr.state.DownloadPriority;
 import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
@@ -27,15 +29,16 @@ public class H2DBService {
 	
 	public static final String DRIVER = "org.h2.Driver";
 	public static final String DB_URL = "jdbc:h2:";
-	public static final String DB_NAME = "./download";
+	public static final String DB_NAME = "./tumblrdownloader";
 	public static final String DB_USER = "sa";
 	public static final String DB_PASS = "mypass";
 	
 	public static final String DOWNLOAD = "download";
 	public static final String SETTINGS = "settings";
+	public static final String SETTINGS_ID = "tumblrdownloader";
 	
 	
-	private H2DBService(){}
+	private H2DBService(){init();}
 	public String init()
 	{
 		 try {
@@ -49,7 +52,12 @@ public class H2DBService {
 				case 90020 : {
 								logger.debug("DB locked by another application. [" + DB_NAME + "]");
 								return "DB locked by another application. [" + DB_NAME + "]";
-							}					
+							}
+/*				case 42102 : {
+								logger.debug("Create Table [" + SETTINGS + "]");
+								createSettingsTable();
+								initSettingsTable();
+				}break;*/
 				default:	{
 								logger.debug("connect execute." + e.getLocalizedMessage());
 								return "connect execute." + e.getLocalizedMessage();
@@ -67,7 +75,7 @@ public class H2DBService {
 		try {
 	        Statement stmt = con.createStatement();
 	        stmt.execute("CREATE TABLE " + DOWNLOAD + " (url VARCHAR(2083) primary key, createtime TIMESTAMP, state INT, "
-	        		+ "filename VARCHAR(255),filesize BIGINT, ext VARCHAR(64), savepath VARCHAR(255),totalTime BIGINT, priority INT)");
+	        		+ "blogId VARCHAR(255),blogName VARCHAR(255),filename VARCHAR(255),filesize BIGINT, ext VARCHAR(64), savepath VARCHAR(255),totalTime BIGINT, priority INT)");
 	        stmt.close();
 		} catch (SQLException e) {
 			logger.debug("stmt execute." + e.getLocalizedMessage());
@@ -95,7 +103,9 @@ public class H2DBService {
 		        while(rs.next()){
 		        	i++;
 		        	System.out.println("load task:[" 	+ i +"] " 
-		        			   + " url:"			+ rs.getString("url") 
+		        			 	+ " url:"		+ rs.getString("url") 
+		        			   + " blogId:"		+ rs.getString("blogId") 
+		        			   + " blogName:"	+ rs.getString("blogName") 
 		        			   + " time:" 		+ rs.getTimestamp("createtime")
 		        			   + " state:" 		+ rs.getInt("state")
 		        			   + " filename:" 	+ rs.getString("filename")
@@ -106,6 +116,8 @@ public class H2DBService {
 		        			   + " priority:" 	+ rs.getInt("priority")
 		        			   );
 		        	String url = rs.getString("url");
+		 		    String blogId = rs.getString("blogId");
+		 		    String blogName = rs.getString("blogName");
 		        	Timestamp time = rs.getTimestamp("createtime");
 		        	int state = rs.getInt("state");
 		        	String filename = rs.getString("filename");
@@ -114,7 +126,7 @@ public class H2DBService {
 		        	String savepath = rs.getString("savepath");
 		        	long totalTime = rs.getLong("totalTime");
 		        	int priority = rs.getInt("priority");
-		        	DownloadContext task = new DownloadContext(url, filename, filesize, time.getTime(), state,ext, savepath,totalTime,priority);
+		        	DownloadContext task = new DownloadContext(url,blogId,blogName,filename, filesize, time.getTime(), state,ext, savepath,totalTime,priority);
 		        	tasks.add(task);
 		        }
 		        stmt.close();
@@ -145,6 +157,8 @@ public class H2DBService {
 		{
 			IContext context = it.next();
 			String url = context.getURL();
+		    String blogId = context.getBlogId();
+ 		    String blogName = context.getBlogName();
 			String filename = context.getFilename();
 			String ext  = context.getExt();
 			long filesize = context.getRemoteFilesize();
@@ -156,6 +170,8 @@ public class H2DBService {
 				try {
 					stmt = con.createStatement();
 					stmt.execute("UPDATE " + DOWNLOAD + " SET state='" + state + "',"
+							+ " blogId='" + blogId + "'," 
+							+ " blogName='" + blogName + "'," 
 							+ " filename='" + filename + "'," 
 							+ " filesize='" + filesize +"'," 
 							+ " ext='" + ext +"', " 
@@ -263,7 +279,7 @@ public class H2DBService {
 	         		+"windowH INT,"
 	         		+"proxyType INT,"
 	         		+"proxyHost VARCHAR(255),"
-	         		+"proxyPort INT"
+	         		+"proxyPort INT,"
 	        		+"consumerKey VARCHAR(255),"
 	         		+"consumerSecret VARCHAR(255),"
 	         		+"oauthToken VARCHAR(255),"
@@ -274,7 +290,7 @@ public class H2DBService {
 			logger.debug("stmt execute." + e.getLocalizedMessage());
 		}
 	}
-	public void initeSettings(Config config) {
+	public void initSettingsTable() {
 		try 
 		{
 			Statement stmt = con.createStatement();	        
@@ -297,7 +313,7 @@ public class H2DBService {
 	         		+"oauthToken,"
 	         		+"oauthTokenSecret,"
 	        		+ ") values ("
-	        		+"'" + "tumblrdownloader" +"',"
+	        		+"'" + SETTINGS_ID +"',"
 	         		+"'" + "./" +"',"
 	         		+"'" + 10000 +"',"
 	         		+"'" + 10000 +"',"
@@ -308,62 +324,19 @@ public class H2DBService {
 	         		+"'" + 600 +"',"
 	         		+"'" + 400 +"',"
 	         		+"'" + 0 +"',"
-	         		+"'" + null +"',"
+	         		+"'" + "" +"',"
 	         		+"'" + 0 +"',"
-	         		+"'" + null +"',"
-	         		+"'" + null +"',"
-	         		+"'" + null +"',"
-	         		+"'" + null +"'"
+	         		+"'" + "" +"',"
+	         		+"'" + "" +"',"
+	         		+"'" + "" +"',"
+	         		+"'" + "" +"'"
 	         		+")");   
 	        stmt.close();
 		} catch (SQLException e) {
 			logger.debug("stmt execute." + e.getLocalizedMessage());
 		} 
 	}
-	public void updateSettings(Config config)
-	{		
-		Statement stmt = null;		
-		try 
-		{
-			stmt = con.createStatement();
-			stmt.execute("UPDATE " + SETTINGS + " SET " 
-					+ " basePath='" 		+ config.basePath 			+ "',"
-					+ " connectTimeout='" 	+ config.connectTimeout 	+ "'," 
-					+ " readTimeout='" 		+ config.readTimeout 		+ "'," 
-					+ " workerCount='" 		+ config.workerCount 		+ "', " 
-					+ " clientCount='" 		+ config.clientCount 		+ "'," 
-					+ " windowX='" 			+ config.windowX 			+ "',"
-					+ " windowY='" 			+ config.windowY 			+ "',"
-					+ " windowW='" 			+ config.windowW 			+ "',"
-					+ " windowH='" 			+ config.windowH 			+ "',"
-					+ " proxyType='" 		+ config.proxy==null? "0" : config.proxy.type().ordinal()	+ "',"
-					+ " proxyHost='" 		+ config.proxy==null? null : ((InetSocketAddress)config.proxy.address()).getHostName()	+ "',"
-					+ " proxyPort='" 		+ config.proxy==null? "0" : ((InetSocketAddress)config.proxy.address()).getPort()	+ "'"
-					+ " consumerKey='" 		+ config.consumerKey 		+ "',"
-					+ " consumerSecret='" 	+ config.consumerSecret 	+ "',"
-					+ " oauthToken='" 		+ config.oauthToken 		+ "',"
-					+ " oauthTokenSecret='" + config.oauthTokenSecret 	+ "',"
-					+ " WHERE id='" + "tumblrdownloader" +"'");
-		} catch (SQLException e) {
-			logger.debug("stmt execute." + e.getLocalizedMessage());
-		} finally{
-			if(stmt != null)
-			{
-			    try {
-					stmt.close();
-				} catch (SQLException e) {
-					logger.debug("stmt close." + e.getLocalizedMessage());
-				}
-			}
-		}
-	}
-	public void savePath() {
-		
-	}
-	public String loadPath() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	
 	public Proxy loadProxy() {
 		Statement stmt = null;
 		try 
@@ -371,13 +344,20 @@ public class H2DBService {
 			if(con != null)
 			{
 				stmt = con.createStatement();
-				ResultSet rs = stmt.executeQuery("SELECT proxyType, proxyHost, proxyPort FROM " + SETTINGS + " WHERE id='" + "tumblrdownloader" +"'");
+				ResultSet rs = stmt.executeQuery("SELECT proxyType, proxyHost, proxyPort FROM " + SETTINGS + " WHERE id='" + SETTINGS_ID +"'");
 		        if(rs.next())
 		        {
 			        int proxyType = rs.getInt("proxyType");
 			        String proxyHost = rs.getString("proxyHost");
 			        int proxyPort = rs.getInt("proxyPort"); 
-			        return new Proxy(Proxy.Type.values()[proxyType],new InetSocketAddress(proxyHost,proxyPort));
+			        Proxy proxy = null;
+			        if(proxyType >0 && proxyType < Proxy.Type.values().length){
+			        	proxy = new Proxy(Proxy.Type.values()[proxyType],new InetSocketAddress(proxyHost,proxyPort));
+			        }else{
+			        	proxy = null;
+			        }
+				    return proxy;
+			        
 		        }
 			}
 		} catch (SQLException e) 
@@ -388,8 +368,8 @@ public class H2DBService {
 								logger.debug("DB locked by another application. [" + DB_URL + "]");
 							}break;					
 				case 42102 : {
-								logger.debug("Create Table [" + DOWNLOAD + "]");
-								createDownloadTable();	
+								logger.debug("Create Table [" + SETTINGS + "]");
+								createSettingsTable();	
 							}break;
 				default:	{
 								logger.debug("stmt execute." + e.getLocalizedMessage());
@@ -411,34 +391,80 @@ public class H2DBService {
 		Statement stmt = null;
 		try 
 		{
+			stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT * FROM " + SETTINGS + " WHERE id='" + SETTINGS_ID +"'");
+	        if(rs.next())
+	        {
+				String basePath = rs.getString("basePath");
+				int connectTimeout = rs.getInt("connectTimeout");
+				int readTimeout = rs.getInt("readTimeout");
+				int workerCount = rs.getInt("workerCount");
+				int clientCount = rs.getInt("clientCount");
+				int windowX = rs.getInt("windowX");
+				int windowY = rs.getInt("windowY");
+				int windowW = rs.getInt("windowW");
+				int windowH = rs.getInt("windowH");
+		        int proxyType = rs.getInt("proxyType");
+		        String proxyHost = rs.getString("proxyHost");
+		        int proxyPort = rs.getInt("proxyPort"); 	
+		        
+		        Proxy proxy = null;
+		        if(proxyType >0 && proxyType < Proxy.Type.values().length){
+		        	proxy = new Proxy(Proxy.Type.values()[proxyType],new InetSocketAddress(proxyHost,proxyPort));
+		        }else{
+		        	proxy = null;
+		        }
+		        
+				String consumerKey = rs.getString("consumerKey");
+				String consumerSecret =  rs.getString("consumerSecret");
+				String oauthToken =  rs.getString("oauthToken");
+				String oauthTokenSecret =  rs.getString("oauthTokenSecret");
+				TumblrToken token = new TumblrToken(consumerKey,consumerSecret,oauthToken,oauthTokenSecret);
+				Config config = new Config(basePath, 
+		        		windowX, windowY, windowW, windowH, 
+		        		workerCount, clientCount, 
+		        		connectTimeout, readTimeout, 
+		        		proxy,token);
+		        return config;      
+			}
+		} catch (SQLException e) 
+		{			
+			switch(e.getErrorCode() )
+			{
+				case 90020 : {
+								logger.debug("DB locked by another application. [" + DB_URL + "]");
+							}break;					
+				default:	{
+								logger.debug("stmt execute." + e.getLocalizedMessage());
+							}break;
+			}
+		}finally{
+			if(stmt != null){
+		        try {
+					stmt.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		return null;
+	}
+	public TumblrToken loadToken() {
+		Statement stmt = null;
+		try 
+		{
 			if(con != null)
 			{
 				stmt = con.createStatement();
-				ResultSet rs = stmt.executeQuery("SELECT * FROM " + SETTINGS + " WHERE id='" + "tumblrdownloader" +"'");
+				ResultSet rs = stmt.executeQuery("SELECT consumerKey, consumerSecret, oauthToken,oauthTokenSecret FROM " + SETTINGS + " WHERE id='" + SETTINGS_ID +"'");
 		        if(rs.next())
 		        {
-					String basePath = rs.getString("basePath");
-					int connectTimeout = rs.getInt("connectTimeout");
-					int readTimeout = rs.getInt("readTimeout");
-					int workerCount = rs.getInt("workerCount");
-					int clientCount = rs.getInt("clientCount");
-					int windowX = rs.getInt("windowX");
-					int windowY = rs.getInt("windowY");
-					int windowW = rs.getInt("windowW");
-					int windowH = rs.getInt("windowH");
-			        int proxyType = rs.getInt("proxyType");
-			        String proxyHost = rs.getString("proxyHost");
-			        int proxyPort = rs.getInt("proxyPort"); 
-			        Proxy proxy = new Proxy(Proxy.Type.values()[proxyType],new InetSocketAddress(proxyHost,proxyPort));
-					String consumerKey = rs.getString("consumerKey");
-					String consumerSecret =  rs.getString("consumerSecret");
-					String oauthToken =  rs.getString("oauthToken");
-					String oauthTokenSecret =  rs.getString("oauthTokenSecret");
-			        return new Config(basePath, 
-			        		windowX, windowY, windowW, windowH, 
-			        		workerCount, clientCount, 
-			        		connectTimeout, readTimeout, 
-			        		proxy,consumerKey,consumerSecret,oauthToken,oauthTokenSecret);
+			        String consumerKey 		= rs.getString("consumerKey");
+			        String consumerSecret 	= rs.getString("consumerSecret");
+			        String oauthToken 		= rs.getString("oauthToken"); 
+			        String oauthTokenSecret = rs.getString("oauthTokenSecret"); 
+			        return new TumblrToken(consumerKey,consumerSecret,oauthToken,oauthTokenSecret);
 		        }
 			}
 		} catch (SQLException e) 
@@ -449,8 +475,8 @@ public class H2DBService {
 								logger.debug("DB locked by another application. [" + DB_URL + "]");
 							}break;					
 				case 42102 : {
-								logger.debug("Create Table [" + DOWNLOAD + "]");
-								createDownloadTable();	
+								logger.debug("Create Table [" + SETTINGS + "]");
+								createSettingsTable();	
 							}break;
 				default:	{
 								logger.debug("stmt execute." + e.getLocalizedMessage());
@@ -467,5 +493,95 @@ public class H2DBService {
 			}
 		}
 		return null;
+	}
+	public String loadPath() {
+		Statement stmt = null;
+		try 
+		{
+			if(con != null)
+			{
+				stmt = con.createStatement();
+				ResultSet rs = stmt.executeQuery("SELECT basePath FROM " + SETTINGS + " WHERE id='" + SETTINGS_ID +"'");
+		        if(rs.next())
+		        {
+			        String basePath = rs.getString("basePath");
+			        return basePath;
+		        }
+			}
+		} catch (SQLException e) 
+		{			
+			switch(e.getErrorCode() )
+			{
+				case 90020 : {
+								logger.debug("DB locked by another application. [" + DB_URL + "]");
+							}break;					
+				case 42102 : {
+								logger.debug("Create Table [" + SETTINGS + "]");
+								createSettingsTable();	
+							}break;
+				default:	{
+								logger.debug("stmt execute." + e.getLocalizedMessage());
+							}break;
+			}
+		}finally{
+			if(stmt != null){
+		        try {
+					stmt.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		return null;
+	}
+	public void update(String UPDATE){
+		logger.debug("UPDATE BY [" + UPDATE + "]");
+		Statement stmt = null;		
+		try 
+		{
+			stmt = con.createStatement();
+			stmt.execute(UPDATE);
+		} catch (SQLException e) {
+			logger.debug("stmt execute." + e.getLocalizedMessage());
+		} finally{
+			if(stmt != null)
+			{
+			    try {
+					stmt.close();
+				} catch (SQLException e) {
+					logger.debug("stmt close." + e.getLocalizedMessage());
+				}
+			}
+		}
+	}
+	public static final String UPDATE_WINDOW_SETTINGS 	= "UPDATE " + SETTINGS + " SET  windowX='%d', windowY='%d', windowW='%d', windowH='%d' WHERE id='" + SETTINGS_ID +"'";
+	public static final String UPDATE_TOKEN_SETTINGS 	= "UPDATE " + SETTINGS + " SET  consumerKey='%s', consumerSecret='%s', oauthToken='%s', oauthTokenSecret='%s' WHERE id='" + SETTINGS_ID +"'";
+	public static final String UPDATE_PATH_SETTINGS 	= "UPDATE " + SETTINGS + " SET  basePath='%s' WHERE id='" + SETTINGS_ID +"'";
+	public static final String UPDATE_PROXY_SETTINGS 	= "UPDATE " + SETTINGS + " SET  proxyType='%d', proxyHost='%s', proxyPort='%d' WHERE id='" + SETTINGS_ID +"'";
+	public void updateWindowSettings(int x,int y,int w,int h) {
+		update(String.format(UPDATE_WINDOW_SETTINGS, x,y,w,h));
+	}
+	public void updateToken(TumblrToken token) {
+		if(token != null)
+		{
+			update(String.format(UPDATE_TOKEN_SETTINGS, token.getConsumer_key(),token.getConsumer_secret(),token.getOauth_token(),token.getOauth_token_secret()));
+		}
+	}
+	public void updatePath(String path) {
+		if(path != null && !path.trim().isEmpty())
+		{
+			update(String.format(UPDATE_PATH_SETTINGS, path));
+		}
+	}
+	public void updateProxy(Proxy proxy) {
+		if(proxy != null)
+		{
+			update(String.format(UPDATE_PROXY_SETTINGS, proxy.type().ordinal(),((InetSocketAddress)proxy.address()).getHostName(),((InetSocketAddress)proxy.address()).getPort()));
+		}
+		else
+		{
+			update(String.format(UPDATE_PROXY_SETTINGS, 0,"",0));
+		}
 	}
 }

@@ -67,6 +67,9 @@ public class UIMonitor{
 		this.on = false;
 	}
 	public void addUpdatable(IUpdatable up){
-		updatables.add(up);
+		if(!updatables.contains(up))
+		{
+			updatables.add(up);
+		}
 	}
 }

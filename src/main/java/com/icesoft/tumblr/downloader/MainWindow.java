@@ -7,6 +7,7 @@ import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.net.Proxy;
 import java.util.Properties;
 
 import javax.swing.JFrame;
@@ -18,13 +19,15 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 import org.apache.log4j.PropertyConfigurator;
 
-import com.icesoft.tumblr.downloader.configure.Settings;
+import com.icesoft.tumblr.downloader.dialog.ExitDialog;
+import com.icesoft.tumblr.downloader.dialog.ProxyDialog;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.monitor.UIMonitor;
 import com.icesoft.tumblr.downloader.panel.DownloadPanel;
 import com.icesoft.tumblr.downloader.panel.LikesPanel;
 import com.icesoft.tumblr.downloader.panel.SettingsPanel;
 import com.icesoft.tumblr.downloader.service.H2DBService;
+import com.icesoft.tumblr.downloader.service.SettingService;
 
 
 public class MainWindow {
@@ -38,7 +41,7 @@ public class MainWindow {
 		pro.put("log4j.appender.stdout.layout.ConversionPattern", "[%-5p] %d{yyyy-MM-dd HH:mm:ss,SSS} method:%l%n%m%n");
 
 		pro.put("log4j.appender.R", "org.apache.log4j.RollingFileAppender");
-		pro.put("log4j.appender.R.File", Settings.getInstance().getPath() + File.separator + "logs" + File.separator + "Info.log");
+		pro.put("log4j.appender.R.File", SettingService.getInstance().getPath() + File.separator + "logs" + File.separator + "Info.log");
 		pro.put("log4j.appender.R.MaxFileSize", "10000KB");
 		pro.put("log4j.appender.R.MaxBackupIndex", "20");
 		pro.put("log4j.appender.R.Threshold", "INFO");
@@ -46,7 +49,7 @@ public class MainWindow {
 		pro.put("log4j.appender.R.layout.ConversionPattern", "%-d{yyyy-MM-dd HH:mm:ss}  [ %t:%r ] - [ %p ]  %m%n");
 
 		pro.put("log4j.appender.A", "org.apache.log4j.RollingFileAppender");
-		pro.put("log4j.appender.A.File", Settings.getInstance().getPath() + File.separator + "logs" + File.separator + "Error.log");
+		pro.put("log4j.appender.A.File", SettingService.getInstance().getPath() + File.separator + "logs" + File.separator + "Error.log");
 		pro.put("log4j.appender.A.MaxFileSize", "10000KB");
 		pro.put("log4j.appender.A.MaxBackupIndex", "20");
 		pro.put("log4j.appender.A.Threshold", "ERROR");
@@ -73,17 +76,22 @@ public class MainWindow {
 					{
 						public void windowClosing(WindowEvent e){
 							Rectangle bounds = window.frame.getBounds();
-							Settings.getInstance().saveWindowSettings(bounds.x, bounds.y, bounds.width, bounds.height);
-							int w = window.frame.getWidth() / 2;
-							int h = window.frame.getHeight() / 2;
-							int x = window.frame.getX() + w /2;
-							int y = window.frame.getY() + h /2;
-							ExitWindow exit = new ExitWindow(x,y,w,h);
-							UIMonitor.getInstance().addUpdatable(exit);
-							exit.setVisible(false);  
-							exit.setModal(true);  
-							exit.setAlwaysOnTop(false);  
-							exit.setVisible(true);
+							SettingService.getInstance().saveWindowSettings(bounds.x, bounds.y, bounds.width, bounds.height);
+							ExitDialog pd = new ExitDialog();
+							UIMonitor.getInstance().addUpdatable(pd);
+							int width = (window.frame.getWidth() / 2) < pd.getMinimumSize().width
+									?pd.getMinimumSize().width
+									:window.frame.getWidth() / 2;
+							int height = (window.frame.getHeight() / 2) < pd.getMinimumSize().height
+									?pd.getMinimumSize().height
+									:window.frame.getHeight() / 2 ;
+							int x = window.frame.getX() + width / 2;
+							int y = window.frame.getY() + height / 2;
+							pd.setVisible(false);
+							pd.setBounds(x, y, width, height);
+							pd.setModal(true);
+							pd.setVisible(true);
+							
 						}
 					}); 
 				} catch (Exception e) {
@@ -112,16 +120,19 @@ public class MainWindow {
 					error, "Error",JOptionPane.CLOSED_OPTION, JOptionPane.ERROR_MESSAGE, null, options, options[0]); 
 			System.exit(0);
 		}
+		applyPropertie();
+		applyUIMonitor();
+		applyProxy();
 		DownloadManager.getInstance().loadTasks();
 	}
 	private void initialize() {
 		//services = new TumblrServices();
 		frame = new JFrame();		
 		frame.setBounds(
-					Settings.getInstance().getWindowX(),
-					Settings.getInstance().getWindowY(),
-					Settings.getInstance().getWindowW(),
-					Settings.getInstance().getWindowH()
+					SettingService.getInstance().getWindowX(),
+					SettingService.getInstance().getWindowY(),
+					SettingService.getInstance().getWindowW(),
+					SettingService.getInstance().getWindowH()
 				);		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
@@ -141,7 +152,7 @@ public class MainWindow {
 		gbc_tabbedPane.gridy = 0;
 		frame.getContentPane().add(tabbedPane);
 		
-		Properties systemProperties = System.getProperties();
+		//Properties systemProperties = System.getProperties();
 		//systemProperties.setProperty("socksProxyHost",Settings.getInstance().getProxySettings().getHost());
 		//systemProperties.setProperty("socksProxyPort",String.valueOf(Settings.getInstance().getProxySettings().getPort()));
 		
@@ -157,13 +168,23 @@ public class MainWindow {
 	    System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire", "debug");
 	    System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");*/
 		
-		//httpclient Enable just context logging
+		//httpclient Enable just context logging		
+	}
+	public void applyPropertie()
+	{
 		System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
 		System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
 		System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
-
+	}
+	public void applyUIMonitor()
+	{		
 		UIMonitor.getInstance().addUpdatable(likesPanel);
 		UIMonitor.getInstance().addUpdatable(downloadPanel);
 		UIMonitor.getInstance().turnOn();
+	}
+	public void applyProxy()
+	{
+		Proxy proxy = SettingService.getInstance().loadProxy();
+		SettingService.getInstance().applyProxy(proxy);
 	}
 }

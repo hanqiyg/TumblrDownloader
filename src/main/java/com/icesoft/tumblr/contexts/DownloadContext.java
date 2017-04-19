@@ -15,6 +15,8 @@ public class DownloadContext implements IContext{
 
 	private String 	URL;
 	private String 	savePath;
+	private String  blogId;
+	private String  blogName;
 	private String 	filename;
 	private String 	ext;
 	private AtomicLong remoteFilesize = new AtomicLong(0);
@@ -30,15 +32,19 @@ public class DownloadContext implements IContext{
 	
 	private volatile boolean run;
 
-	public DownloadContext(String URL, DownloadState state, String savePath) {
+	public DownloadContext(String URL, DownloadState state, String savePath, String blogId,String blogName) {
 		this.URL = URL;
 		this.state = state;
 		this.savePath = savePath;
 		this.priority = DownloadPriority.NORMAL;
+		this.setBlogId(blogId);
+		this.setBlogName(blogName);
 	}
-	public DownloadContext(String url, String filename, long filesize, long time, int state,
+	public DownloadContext(String url, String blogId,String blogName,String filename,long filesize, long time, int state,
 			String ext, String savepath, long totalTime, int priority) {
 		this.URL = url;
+		this.setBlogId(blogId);
+		this.setBlogName(blogName);
 		this.filename = filename;
 		this.remoteFilesize.set(filesize);
 		this.createTime.set(time);
@@ -47,7 +53,6 @@ public class DownloadContext implements IContext{
 		this.ext = ext;
 		this.savePath = savepath;
 		this.totalTime.set(totalTime);
-
 	}
 
 	public synchronized String getURL() {
@@ -204,5 +209,17 @@ public class DownloadContext implements IContext{
 		sb.append("\n");
 		sb.append("Context END  : [" + URL + "]");
 		return sb.toString();
+	}
+	public String getBlogName() {
+		return blogName;
+	}
+	public void setBlogName(String blogName) {
+		this.blogName = blogName;
+	}
+	public String getBlogId() {
+		return blogId;
+	}
+	public void setBlogId(String blogId) {
+		this.blogId = blogId;
 	}	
 }

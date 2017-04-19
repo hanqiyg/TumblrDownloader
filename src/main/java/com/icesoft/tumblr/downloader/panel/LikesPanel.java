@@ -20,11 +20,11 @@ import javax.swing.JTable;
 import org.htmlparser.util.ParserException;
 
 import com.icesoft.tumblr.contexts.DownloadContext;
-import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.managers.QueryManager;
 import com.icesoft.tumblr.downloader.panel.interfaces.IUpdatable;
 import com.icesoft.tumblr.downloader.service.PostService;
+import com.icesoft.tumblr.downloader.service.SettingService;
 import com.icesoft.tumblr.downloader.service.TumblrServices;
 import com.icesoft.tumblr.downloader.service.UrlService;
 import com.icesoft.tumblr.downloader.tablemodel.LikesPostModel;
@@ -115,15 +115,12 @@ public class LikesPanel extends JPanel implements IUpdatable{
 								VideoInfo info = UrlService.getVideoInfoFromEmbed(embed);
 								String url = info.getURL();
 								String poster = info.getPosterURL();
-								String saveLocation = Settings.getInstance().getPath();
+								String saveLocation = SettingService.getInstance().getPath();
 								String id = TumblrServices.getInstance().getBlogId(v);
 								String name = TumblrServices.getInstance().getBlogName(v);
-								DownloadManager.getInstance().addNewTask(new DownloadContext(url,DownloadState.WAIT,saveLocation + File.separator + name + File.separator + id));
-								DownloadManager.getInstance().addNewTask(new DownloadContext(poster,DownloadState.WAIT,saveLocation + File.separator + name + File.separator + id));
-								//DownloadManager.getInstance().addNewTask(new DownloadTask(url, saveLocation + File.separator + name + File.separator + id));
-								//DownloadManager.getInstance().addNewTask(new DownloadTask(poster, saveLocation + File.separator + name + File.separator + id));
+								DownloadManager.getInstance().addNewTask(new DownloadContext(url,DownloadState.WAIT,saveLocation, id , name));
+								DownloadManager.getInstance().addNewTask(new DownloadContext(poster,DownloadState.WAIT,saveLocation, id , name));
 							} catch (ParserException | IOException e1) {
-								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
 						}
@@ -132,11 +129,10 @@ public class LikesPanel extends JPanel implements IUpdatable{
 						PhotoPost photoPost = (PhotoPost) post;
 						for(Photo photo : photoPost.getPhotos()){
 							String url = photo.getOriginalSize().getUrl();								
-							//DownloadManager.getInstance().addImageTask(new ImageInfo(url,TumblrServices.getInstance().getBlogId(photoPost),TumblrServices.getInstance().getBlogName(photoPost)));
-							String saveLocation = Settings.getInstance().getPath();
+							String saveLocation = SettingService.getInstance().getPath();
 							String id = TumblrServices.getInstance().getBlogId(photoPost);
 							String name = TumblrServices.getInstance().getBlogName(photoPost);
-							DownloadManager.getInstance().addNewTask(new DownloadContext(url,DownloadState.WAIT,saveLocation + File.separator + name + File.separator + id));
+							DownloadManager.getInstance().addNewTask(new DownloadContext(url,DownloadState.WAIT,saveLocation, id , name));
 						}
 					}
 				}

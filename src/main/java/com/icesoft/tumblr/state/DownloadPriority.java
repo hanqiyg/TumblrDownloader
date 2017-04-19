@@ -13,10 +13,11 @@ public enum DownloadPriority
 	MEDIUM,
 	HIGH,
 	CRITICAL;*/
-  public static DownloadPriority valueOf(int ordinal) {
-        if (ordinal < 0 || ordinal >= values().length) {
+	public static DownloadPriority valueOf(int ordinal) {
+		if (ordinal < 0 || ordinal >= values().length) 
+		{
             throw new IndexOutOfBoundsException("Invalid ordinal");
         }
         return values()[ordinal];
-    }
+	}
 }

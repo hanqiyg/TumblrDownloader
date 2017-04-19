@@ -17,8 +17,8 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 
-import com.icesoft.tumblr.downloader.configure.Settings;
 import com.icesoft.tumblr.downloader.monitor.IdleConnectionMonitor;
+import com.icesoft.tumblr.downloader.service.SettingService;
 
 public class HttpClientConnectionManager 
 {
@@ -54,13 +54,13 @@ public class HttpClientConnectionManager
 		    }
 		};
 	   RequestConfig requestConfig = RequestConfig.custom()
-	            .setConnectionRequestTimeout(Settings.getInstance().getConnectionTimeout())
-	            .setSocketTimeout(Settings.getInstance().readTimeout())
-	            .setConnectionRequestTimeout(Settings.getInstance().readTimeout())
+	            .setConnectionRequestTimeout(SettingService.getInstance().getConnectionTimeout())
+	            .setSocketTimeout(SettingService.getInstance().readTimeout())
+	            .setConnectionRequestTimeout(SettingService.getInstance().readTimeout())
 	            .build();
 		connManager = new PoolingHttpClientConnectionManager();
 		connManager.setDefaultMaxPerRoute(5);
-		connManager.setMaxTotal(Settings.getInstance().getHttpClientCount());
+		connManager.setMaxTotal(SettingService.getInstance().getHttpClientCount());
 		client = HttpClientBuilder
 				.create()
 				.setConnectionManager(connManager)

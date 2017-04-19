@@ -36,4 +36,6 @@ public interface IContext{
 	public void setPriority(DownloadPriority priority);
 	public DownloadPriority getPriority();
 	public boolean equals(Object obj);
+	public String getBlogId();
+	public String getBlogName();
 }

@@ -2,22 +2,41 @@ package com.icesoft.tumblr.downloader;
 
 import org.junit.Test;
 
+import com.icesoft.tumblr.downloader.configure.Config;
 import com.icesoft.tumblr.downloader.service.H2DBService;
 import com.icesoft.tumblr.state.DownloadPriority;
 
 public class Start {
 	@Test
 	public void createDB(){
-		H2DBService.getInstance().createDB();
+		H2DBService.getInstance().createDownloadTable();
 	}
 
 	@Test
 	public void dropDB(){
-		H2DBService.getInstance().dropDB();
+		H2DBService.getInstance().dropDownloadTable();
 	}
 	@Test
 	public void loadDB(){
 		H2DBService.getInstance().loadTask();
+	}
+	@Test
+	public void createSettingsDB(){
+		H2DBService.getInstance().createSettingsTable();
+	}
+	@Test
+	public void initSettingsDB(){
+		H2DBService.getInstance().initSettingsTable();
+	}	
+	@Test
+	public void printSettingsDB(){
+		H2DBService i = H2DBService.getInstance();
+		System.err.println("H2DBService:" 	+ i==null?"H2DBService null":i);
+		Config c = H2DBService.getInstance().loadSettings();
+		System.err.println("Config:" 		+ c==null?"Config null":c);
+		String s = c.toString();
+		System.err.println("toString:" 		+ s==null?"toString null":s);
+		
 	}
 	@Test
 	public void testString(){

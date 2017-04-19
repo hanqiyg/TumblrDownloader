@@ -23,7 +23,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 
-import com.icesoft.tumblr.downloader.configure.Settings;
+import com.icesoft.tumblr.downloader.service.SettingService;
+
 
 public class ProxyDialog extends JDialog
 {
@@ -31,7 +32,6 @@ public class ProxyDialog extends JDialog
 	private JTextField tfProxyHost;
 	private JTextField tfPort;
 	
-	private Proxy proxy = null;
 	private JButton btnSave,btnApply,btnLoad;
 
 	private JComboBox<Proxy.Type> proxyType;
@@ -174,94 +174,22 @@ public class ProxyDialog extends JDialog
 				btnTest.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) 
 					{
-						switch((Proxy.Type)proxyType.getSelectedItem())
-						{
-						case DIRECT:{
-										lblTestResult.setText("Testing");
-										if(Settings.getInstance().testDirectConnect())
-										{
-											proxy = null;
-											lblTestResult.setText("Pass.");
-											btnApply.setEnabled(true);
-											btnSave.setEnabled(true);	
-										}
-										else
-										{
-											proxy = null;
-											lblTestResult.setText("Fail.");
-											btnApply.setEnabled(false);
-											btnSave.setEnabled(false);											
-										}
-									}break;
-						case HTTP:	{
-										String host = tfProxyHost.getText();
-										int port = 0;
-										try{
-											port = Integer.valueOf(tfPort.getText());
-										}catch(java.lang.NumberFormatException e1){
-											port = 0;
-										}
-										if(host == null || host.isEmpty())
-										{
-											lblTestResult.setText("Host must be filled.");
-											return;
-										}
-										if(port <= 0)
-										{
-											lblTestResult.setText("Port must be filled.");
-											return;
-										}
-										proxy = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(host,port));
-										if(Settings.getInstance().testProxyConnect(proxy))
-										{
-											lblTestResult.setText("Pass.");
-											btnApply.setEnabled(true);
-											btnSave.setEnabled(true);	
-										}
-										else
-										{
-											proxy = null;
-											lblTestResult.setText("Fail.");
-											btnApply.setEnabled(false);
-											btnSave.setEnabled(false);	
-										}
-									}break;
-						case SOCKS:	{
-										String host = tfProxyHost.getText();
-										int port = 0;
-										try{
-											port = Integer.valueOf(tfPort.getText());
-										}catch(java.lang.NumberFormatException e1){
-											port = 0;
-										}
-										
-										if(host == null || host.isEmpty())
-										{
-											lblTestResult.setText("Host must be filled.");
-											return;
-										}
-										if(port <= 0)
-										{
-											lblTestResult.setText("Port must be filled.");
-											return;
-										}
-										proxy = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(host,port));
-										if(Settings.getInstance().testProxyConnect(proxy))
-										{
-											lblTestResult.setText("Pass.");
-											btnApply.setEnabled(true);
-											btnSave.setEnabled(true);	
-										}
-										else
-										{
-											proxy = null;
-											lblTestResult.setText("Fail.");
-											btnApply.setEnabled(false);
-											btnSave.setEnabled(false);	
-										}
-									}break;
-						default:
-							break;						
+						Proxy proxy = UIToData();
+						if(proxy == null){
+							lblTestResult.setText("Testing.");
+							if(SettingService.getInstance().testDirectConnect())
+							{
+								lblTestResult.setText("Success.");
+							}else{
+								lblTestResult.setText("Failure.");
+							}
+						}else{
+							if(SettingService.getInstance().testProxyConnect(proxy))
+							{
+								lblTestResult.setText("Success.");
+							}else{
+								lblTestResult.setText("Failure.");
+							}
 						}
 					}
 				});
@@ -270,13 +198,14 @@ public class ProxyDialog extends JDialog
 				btnApply = new JButton("Apply");
 				btnApply.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
+						Proxy proxy = UIToData();
 						if(proxy != null)
 						{
-							Settings.getInstance().applyProxy(proxy);
+							SettingService.getInstance().applyProxy(proxy);
 						}
 						else
 						{
-							Settings.getInstance().clearProxyProperties();
+							SettingService.getInstance().clearProxyProperties();
 						}
 					}
 				});
@@ -285,7 +214,8 @@ public class ProxyDialog extends JDialog
 				btnSave = new JButton("Save");
 				btnSave.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						Settings.getInstance().saveProxy(proxy);
+						Proxy proxy = UIToData();
+						SettingService.getInstance().saveProxy(proxy);
 					}
 				});
 				plControl.add(btnSave);
@@ -293,11 +223,8 @@ public class ProxyDialog extends JDialog
 				btnLoad = new JButton("Load");
 				btnLoad.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						Proxy proxy = Settings.getInstance().loadProxy();
-						proxyType.setSelectedItem(proxy.type());
-						InetSocketAddress add = (InetSocketAddress) proxy.address();
-						tfProxyHost.setText(add.getHostName());
-						tfPort.setText(String.valueOf(add.getPort()));
+						SettingService.getInstance().loadProxy();
+						DataToUI();
 					}
 				});
 				plControl.add(btnLoad);
@@ -311,6 +238,45 @@ public class ProxyDialog extends JDialog
 				plControl.add(btnCancel);
 				btnApply.setEnabled(false);
 				btnSave.setEnabled(false);	
+				DataToUI();
+	}
+	public void DataToUI()
+	{
+		Proxy proxy = SettingService.getInstance().getProxy();
+		if(proxy == null)
+		{
+			proxyType.setSelectedItem(Proxy.Type.DIRECT);
+			tfProxyHost.setText("");
+			tfPort.setText("");
+		}
+		else
+		{
+			proxyType.setSelectedItem(proxy.type());
+			InetSocketAddress add = (InetSocketAddress) proxy.address();
+			tfProxyHost.setText(add.getHostName());
+			tfPort.setText(String.valueOf(add.getPort()));
+		}
+	}
+	public Proxy UIToData(){
+		Proxy proxy = null;
+		String host = tfProxyHost.getText();
+		int port = 0;
+		try{
+			port = Integer.valueOf(tfPort.getText());
+		}catch(java.lang.NumberFormatException e1){
+			port = 0;
+		}
+		switch((Proxy.Type)proxyType.getSelectedItem()){
+		case DIRECT:proxy =  null;
+			break;
+		case HTTP:	proxy = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(host,port));
+			break;
+		case SOCKS:	proxy = new Proxy(Proxy.Type.SOCKS,new InetSocketAddress(host,port));
+			break;
+		default:	proxy = null;
+			break;		
+		}
+		return proxy;
 	}
 
 /*	private boolean checkSystem() {

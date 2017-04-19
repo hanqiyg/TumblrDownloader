@@ -1,5 +1,4 @@
-package com.icesoft.tumblr.settings;
-
+package com.icesoft.tumblr.downloader.configure;
 public class TumblrToken {
 	private String consumer_key;
 	private String consumer_secret;
@@ -51,9 +50,9 @@ public class TumblrToken {
 	}
 	@Override
 	public String toString() {
-		return 	"consumer_key: " 		+ this.consumer_key 		+ "\r\n"
-			+	"consumer_secret: " 	+ this.consumer_secret 		+ "\r\n"
-			+	"oauth_token: "			+ this.oauth_token 			+ "\r\n"
-			+ 	"oauth_token_secret: "	+ this.oauth_token_secret 	+ "\r\n";
+		return 	"      consumer_key : [" 	+ this.consumer_key 		+ "]\r\n"
+			+	"   consumer_secret : [" 	+ this.consumer_secret 		+ "]\r\n"
+			+	"       oauth_token : ["	+ this.oauth_token 			+ "]\r\n"
+			+ 	"oauth_token_secret : ["	+ this.oauth_token_secret 	+ "]\r\n";
 	}
 }
