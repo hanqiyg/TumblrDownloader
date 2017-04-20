@@ -118,8 +118,12 @@ public class LikesPanel extends JPanel implements IUpdatable{
 								String saveLocation = SettingService.getInstance().getPath();
 								String id = TumblrServices.getInstance().getBlogId(v);
 								String name = TumblrServices.getInstance().getBlogName(v);
-								DownloadManager.getInstance().addNewTask(new DownloadContext(url,DownloadState.WAIT,saveLocation, id , name));
-								DownloadManager.getInstance().addNewTask(new DownloadContext(poster,DownloadState.WAIT,saveLocation, id , name));
+								DownloadContext video = new DownloadContext(url,DownloadState.WAIT,saveLocation, id , name);
+								DownloadContext po = new DownloadContext(poster,DownloadState.WAIT,saveLocation, id , name);
+								System.out.println(video.toString());
+								System.out.println(po.toString());
+								DownloadManager.getInstance().addNewTask(video);
+								DownloadManager.getInstance().addNewTask(po);
 							} catch (ParserException | IOException e1) {
 								e1.printStackTrace();
 							}

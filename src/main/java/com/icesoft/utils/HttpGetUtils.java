@@ -14,7 +14,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.log4j.Logger;
 
-import com.icesoft.tumblr.contexts.DownloadContext;
 import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
 import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
@@ -34,6 +33,7 @@ public class HttpGetUtils
 				downloadContext.setRemoteFilesize(response.getEntity().getContentLength());
 				downloadContext.setFilename(StringUtils.getFilename(response, downloadContext.getURL()));
 				downloadContext.setExt(MineType.getInstance().getExtensionFromMineType(response.getEntity().getContentType().getValue()));
+				logger.debug(downloadContext.toString());
 		        if(!downloadContext.isRun()){
 					logger.debug("return DownloadState.PAUSE");
 		        	return DownloadState.PAUSE;
@@ -72,8 +72,17 @@ public class HttpGetUtils
 		}
 	}
 	public static DownloadState localQuery(IContext downloadContext)
-	{
-		File file = new File(downloadContext.getAbsolutePath());
+	{	
+		logger.debug(downloadContext.getAbsolutePath());
+		File file = null;
+		try{
+			file = new File(downloadContext.getAbsolutePath());
+		}catch(NullPointerException e){
+			downloadContext.setLocalFilesize(0);
+			downloadContext.setMessage("getAbsolutePath can not be null:[" + downloadContext.getAbsolutePath()+"]");
+			logger.debug("return DownloadState.EXCEPTION");
+			return DownloadState.EXCEPTION;
+		}		
 		if(file.exists())
 		{
 			if(file.length() == downloadContext.getRemoteFilesize())

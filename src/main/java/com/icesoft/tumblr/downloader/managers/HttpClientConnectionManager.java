@@ -55,8 +55,8 @@ public class HttpClientConnectionManager
 		};
 	   RequestConfig requestConfig = RequestConfig.custom()
 	            .setConnectionRequestTimeout(SettingService.getInstance().getConnectionTimeout())
-	            .setSocketTimeout(SettingService.getInstance().readTimeout())
-	            .setConnectionRequestTimeout(SettingService.getInstance().readTimeout())
+	            .setSocketTimeout(SettingService.getInstance().getReadTimeout())
+	            .setConnectionRequestTimeout(SettingService.getInstance().getReadTimeout())
 	            .build();
 		connManager = new PoolingHttpClientConnectionManager();
 		connManager.setDefaultMaxPerRoute(5);

@@ -7,7 +7,10 @@ import org.apache.http.HeaderElement;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 
+import com.icesoft.tumblr.downloader.configure.Constants;
+
 public class StringUtils {
+
 	//private static Logger logger = Logger.getLogger(StringUtils.class);  
 	public static String getFilenameFromDisposition(HttpResponse response){
 		Header contentHeader = response.getFirstHeader("Content-Disposition");  
@@ -58,9 +61,25 @@ public class StringUtils {
 		//logger.info("Path:" + sb.toString());
 		return sb.toString();		
 	}
+
 	public static String getAsciiPathString(String sub){
-		String pathString = sub.replaceAll("[^a-zA-Z0-9.-]", "_");
+		String pathString = sub.replaceAll("[^a-zA-Z0-9.-]", Constants.FILENAME_PARTITION);
 		//logger.info("Replace " + sub + " as " + pathString);
 		return pathString;
+	}
+	public static String getFilenameExt(String filename){
+		if(filename != null && filename.contains(".")){
+			String[]  args = filename.split(Constants.SPLITE_REGX_DOT);
+			return args[args.length-1];
+		}else{
+			return null;
+		}		
+	}
+	public static String getAbsolutePath(String saveLocation,String filename,String blogId,String blogName,String ext){
+		if(getFilenameExt(filename)!= null && ext != null && getFilenameExt(filename).equals(ext)){
+			return saveLocation + File.separator + blogId + Constants.FILENAME_PARTITION + blogName + Constants.FILENAME_PARTITION + filename;	
+		}else{
+			return saveLocation + File.separator + blogId + Constants.FILENAME_PARTITION + blogName + Constants.FILENAME_PARTITION + filename + "." + ext;	
+		}				
 	}
 }

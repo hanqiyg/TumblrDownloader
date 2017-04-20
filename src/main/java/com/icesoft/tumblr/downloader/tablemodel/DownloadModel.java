@@ -84,7 +84,7 @@ public class DownloadModel extends AbstractTableModel {
 			case MESSAGE:		return context.getMessage();
 			case CREATETIME:	return new Date(context.getCreateTime());
 			case ID:			return row + 1;
-			case NAME:			return context.getAbsolutePath();
+			case NAME:			return (context.getAbsolutePath()==null?"Untitled":context.getAbsolutePath());
 			case PROGRESS:		return new ProgressObject(context);
 			case RECIVED:		return new SizeObject(context.getLocalFilesize());
 			case SPEED:			return new SpeedObject(context.getCurrentSpeed());

@@ -1,6 +1,5 @@
 package com.icesoft.tumblr.state;
 
-import com.icesoft.tumblr.contexts.DownloadContext;
 import com.icesoft.tumblr.state.interfaces.IContext;
 import com.icesoft.utils.HttpGetUtils;
 

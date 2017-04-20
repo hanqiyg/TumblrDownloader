@@ -50,9 +50,9 @@ public class TumblrToken {
 	}
 	@Override
 	public String toString() {
-		return 	"      consumer_key : [" 	+ this.consumer_key 		+ "]\r\n"
-			+	"   consumer_secret : [" 	+ this.consumer_secret 		+ "]\r\n"
-			+	"       oauth_token : ["	+ this.oauth_token 			+ "]\r\n"
-			+ 	"oauth_token_secret : ["	+ this.oauth_token_secret 	+ "]\r\n";
+		return 	"      consumer_key : [" 	+ this.consumer_key 		+ "]" + Constants.ENTER
+			+	"   consumer_secret : [" 	+ this.consumer_secret 		+ "]" + Constants.ENTER
+			+	"       oauth_token : ["	+ this.oauth_token 			+ "]" + Constants.ENTER
+			+ 	"oauth_token_secret : ["	+ this.oauth_token_secret 	+ "]" + Constants.ENTER;
 	}
 }

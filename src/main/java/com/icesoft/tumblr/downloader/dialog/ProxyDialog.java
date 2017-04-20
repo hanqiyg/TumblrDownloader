@@ -180,6 +180,8 @@ public class ProxyDialog extends JDialog
 							if(SettingService.getInstance().testDirectConnect())
 							{
 								lblTestResult.setText("Success.");
+								btnApply.setEnabled(true);
+								btnSave.setEnabled(true);	
 							}else{
 								lblTestResult.setText("Failure.");
 							}
@@ -187,6 +189,8 @@ public class ProxyDialog extends JDialog
 							if(SettingService.getInstance().testProxyConnect(proxy))
 							{
 								lblTestResult.setText("Success.");
+								btnApply.setEnabled(true);
+								btnSave.setEnabled(true);	
 							}else{
 								lblTestResult.setText("Failure.");
 							}

@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 
 import com.icesoft.tumblr.contexts.DownloadContext;
 import com.icesoft.tumblr.downloader.service.H2DBService;
+import com.icesoft.tumblr.downloader.service.SettingService;
 import com.icesoft.tumblr.downloader.workers.HttpGetWorker;
 import com.icesoft.tumblr.executors.Contextful;
 import com.icesoft.tumblr.executors.PriorityThreadPoolExecutor;
@@ -31,7 +32,7 @@ public class DownloadManager {
 	private ThreadFactory threadFactory = Executors.defaultThreadFactory();
 	private RejectedExecutionHandlerImpl rejecter = new RejectedExecutionHandlerImpl();
 	private ThreadPoolExecutor pool = new PriorityThreadPoolExecutor(
-			4, 6, 10, TimeUnit.SECONDS, queue, threadFactory, rejecter);
+			SettingService.getInstance().getWorkerCount(), SettingService.getInstance().getWorkerCount(), 10, TimeUnit.SECONDS, queue, threadFactory, rejecter);
 	private List<IContext> contexts = new ArrayList<IContext>();
 
 	

@@ -40,19 +40,21 @@ public class Config{
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
-		sb.append("========= Config Begin ========="+ "\n\r");
-		sb.append("basePath:" + basePath + "\n\r");
-		sb.append("windowX:" + windowX + "\n\r");
-		sb.append("windowY:" + windowY + "\n\r");
-		sb.append("windowW:" + windowW + "\n\r");
-		sb.append("windowH:" + windowH + "\n\r");
-		sb.append("workerCount:" + workerCount + "\n\r");
-		sb.append("clientCount:" + clientCount + "\n\r");
-		sb.append("connectTimeout:" + connectTimeout + "\n\r");
-		sb.append("readTimeout:" + readTimeout + "\n\r");
-		sb.append("proxy:" + "\n\r" + (proxy==null?"null":proxy.toString()) + "\n\r");
-		sb.append("token:" + "\n\r" + (token==null?"null":token.toString()) + "\n\r");
-		sb.append("========= Config End   ========="+ "\n\r");
+		sb.append("========= Config Begin ========="	+ Constants.ENTER);
+		sb.append("basePath:" 		+ basePath 			+ Constants.ENTER);
+		sb.append("windowX:" 		+ windowX 			+ Constants.ENTER);
+		sb.append("windowY:" 		+ windowY 			+ Constants.ENTER);
+		sb.append("windowW:" 		+ windowW 			+ Constants.ENTER);
+		sb.append("windowH:" 		+ windowH 			+ Constants.ENTER);
+		sb.append("workerCount:" 	+ workerCount 		+ Constants.ENTER);
+		sb.append("clientCount:" 	+ clientCount 		+ Constants.ENTER);
+		sb.append("connectTimeout:" + connectTimeout 	+ Constants.ENTER);
+		sb.append("readTimeout:" 	+ readTimeout 		+ Constants.ENTER);
+		sb.append("proxy:" 								+ Constants.ENTER);
+		sb.append(proxy==null?"null":proxy.toString()	+ Constants.ENTER);
+		sb.append("token:"								+ Constants.ENTER);
+		sb.append(token==null?"null":token.toString()	+ Constants.ENTER);
+		sb.append("========= Config End   ========="	+ Constants.ENTER);
 		return sb.toString();
 	}	
 }

@@ -7,11 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
-import java.util.Properties;
-
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-
 import com.icesoft.tumblr.downloader.configure.Config;
 import com.icesoft.tumblr.downloader.configure.TumblrToken;
 import com.icesoft.tumblr.downloader.service.H2DBService;
@@ -25,10 +21,8 @@ public class SettingService {
 		load();
 	}
 	private void load(){
-		System.out.print("============== Load Config Begin ==============" + "\n\r");
 		config = H2DBService.getInstance().loadSettings();
 		System.out.print(config.toString());
-		System.out.print("============== Load Config End   ==============" + "\n\r");
 	}
 	
 	public static SettingService getInstance(){
@@ -36,6 +30,7 @@ public class SettingService {
 	}
 
 	public boolean testProxyConnect(Proxy proxy){
+		clearProxyProperties();
 		System.out.println("testProxyConnect @ " + proxy.toString());
 		HttpURLConnection connection = null;
 		try {
@@ -58,6 +53,7 @@ public class SettingService {
 		}
 	}
 	public boolean testDirectConnect(){
+		clearProxyProperties();
 		System.out.println("testDirectConnect");
 		HttpURLConnection connection = null;
 		try {
@@ -99,13 +95,22 @@ public class SettingService {
 		case SOCKS:{
 			clearProxyProperties();
 			InetSocketAddress sa = (InetSocketAddress) proxy.address();
-			System.getProperties().setProperty("http.socksProxyHost", sa.getHostName());
-			System.getProperties().setProperty("http.socksProxyPort", String.valueOf(sa.getPort()));
+			System.getProperties().setProperty("socksProxyHost", sa.getHostName());
+			System.getProperties().setProperty("socksProxyPort", String.valueOf(sa.getPort()));
 		}
 			break;
 		default:
 			break;		
 		}
+		//printProxyProperties();
+	}
+	public void printProxyProperties() {
+		System.out.println("http.proxyHost" + "->" + System.getProperties().get("http.proxyHost"));
+		System.out.println("http.proxyPort" + "->" + System.getProperties().get("http.proxyPort"));
+		System.out.println("https.proxyHost" + "->" + System.getProperties().get("https.proxyHost"));
+		System.out.println("https.proxyPort" + "->" + System.getProperties().get("https.proxyPort"));
+		System.out.println("socksProxyHost" + "->" + System.getProperties().get("socksProxyHost"));
+		System.out.println("socksProxyPort" + "->" + System.getProperties().get("socksProxyPort"));
 	}
 	public void clearProxyProperties()
 	{
@@ -181,7 +186,10 @@ public class SettingService {
 	public int getConnectionTimeout() {
 		return config.connectTimeout;
 	}
-	public int readTimeout() {
+	public int getWorkerCount() {
+		return config.workerCount;
+	}
+	public int getReadTimeout() {
 		return config.readTimeout;
 	}
 	public TumblrToken getToken(){

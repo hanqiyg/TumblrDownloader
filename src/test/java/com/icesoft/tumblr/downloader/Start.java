@@ -8,27 +8,6 @@ import com.icesoft.tumblr.state.DownloadPriority;
 
 public class Start {
 	@Test
-	public void createDB(){
-		H2DBService.getInstance().createDownloadTable();
-	}
-
-	@Test
-	public void dropDB(){
-		H2DBService.getInstance().dropDownloadTable();
-	}
-	@Test
-	public void loadDB(){
-		H2DBService.getInstance().loadTask();
-	}
-	@Test
-	public void createSettingsDB(){
-		H2DBService.getInstance().createSettingsTable();
-	}
-	@Test
-	public void initSettingsDB(){
-		H2DBService.getInstance().initSettingsTable();
-	}	
-	@Test
 	public void printSettingsDB(){
 		H2DBService i = H2DBService.getInstance();
 		System.err.println("H2DBService:" 	+ i==null?"H2DBService null":i);
@@ -37,6 +16,25 @@ public class Start {
 		String s = c.toString();
 		System.err.println("toString:" 		+ s==null?"toString null":s);
 		
+	}
+	public void splite(String s){
+		String splite = "\\.";
+		String[] args = s.split(splite);
+		StringBuffer sb = new StringBuffer();
+		sb.append(s +" splite by [" + splite + "] into [" + args.length + "]={");
+		for(String a : args){
+			sb.append(a + " ");
+		}
+		sb.append("}");
+		System.out.println(sb.toString());
+	}
+	@Test
+	public void testSplite(){
+		String[] s = {"tumblr_nu86mgbLsN1uatgt2_frame1.jpg","tumblr_oau21zjnWS1vbslqx_smart1.jpg"};
+		for(String a : s){
+			System.out.println(a.contains("\\."));
+			splite(a);
+		}		
 	}
 	@Test
 	public void testString(){

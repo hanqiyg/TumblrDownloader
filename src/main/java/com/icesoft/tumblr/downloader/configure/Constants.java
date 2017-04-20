@@ -3,6 +3,10 @@ package com.icesoft.tumblr.downloader.configure;
 public class Constants {
 	public static final String HTML_COLORED_TEXT = "<html><b><font color ='%s'>%s</font></b></html>";
 	public static final String UNNAMEDBLOG = "UNNAMED";
+	public static final String ENTER = "\n";
+	public static final String FILENAME_PARTITION = "_";
+	public static final String SPLITE_REGX_DOT = "\\.";
+	
 	public enum HttpClientConnectionManagerConfigure{
 		MaxTotal("HttpClientConnectionManagerConfigure.MaxTotal",5);
 		private String key;

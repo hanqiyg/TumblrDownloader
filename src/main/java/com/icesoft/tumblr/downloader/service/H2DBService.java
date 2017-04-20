@@ -1,11 +1,15 @@
 package com.icesoft.tumblr.downloader.service;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -33,11 +37,12 @@ public class H2DBService {
 	public static final String DB_USER = "sa";
 	public static final String DB_PASS = "mypass";
 	
-	public static final String DOWNLOAD = "download";
-	public static final String SETTINGS = "settings";
+	public static final String DOWNLOAD = "DOWNLOAD";
+	public static final String SETTINGS = "SETTINGS";
 	public static final String SETTINGS_ID = "tumblrdownloader";
 	
-	
+	public static final String TABLE_MD5_DOWNLOAD = "e3bbd5ed67b7be1824cfa994a116de12";
+	public static final String TABLE_MD5_SETTINGS = "43129baa8812bcc83aa846db18b72a7d";
 	private H2DBService(){init();}
 	public String init()
 	{
@@ -64,28 +69,74 @@ public class H2DBService {
 							}
 			}
 		}
+		try {
+			testDBSchema();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return null;
 	}
 	public static H2DBService getInstance(){
 		return instance;
 	}
-
-	public void createDownloadTable()
+	
+	public void testDBSchema() throws ClassNotFoundException, NoSuchAlgorithmException, SQLException, IOException
 	{
-		try {
-	        Statement stmt = con.createStatement();
-	        stmt.execute("CREATE TABLE " + DOWNLOAD + " (url VARCHAR(2083) primary key, createtime TIMESTAMP, state INT, "
-	        		+ "blogId VARCHAR(255),blogName VARCHAR(255),filename VARCHAR(255),filesize BIGINT, ext VARCHAR(64), savepath VARCHAR(255),totalTime BIGINT, priority INT)");
+		String download = getSchemaMd5(DOWNLOAD);
+		String settings = getSchemaMd5(SETTINGS);
+		if(!TABLE_MD5_DOWNLOAD.equals(download)){
+			System.err.println("REC:[" + TABLE_MD5_DOWNLOAD + "]");
+			System.err.println("NOW:[" + download + "]");
+			System.err.println("DB Table [" + DOWNLOAD + "] checksum fail.");
+			dropTable(DOWNLOAD);
+			createDownloadTable();
+		}
+		if(!TABLE_MD5_SETTINGS.equals(settings)){
+			System.err.println("REC:[" + TABLE_MD5_SETTINGS + "]");
+			System.err.println("NOW:[" + settings + "]");
+			System.err.println("DB Table [" + SETTINGS + "] checksum fail.");
+			dropTable(SETTINGS);
+			createSettingsTable();
+			initSettingsTable();
+		}
+	}
+
+	private void dropTable(String DBName) {
+        try {
+        	Statement stmt = con.createStatement();
+			stmt.execute("DROP TABLE " + DBName);
 	        stmt.close();
 		} catch (SQLException e) {
 			logger.debug("stmt execute." + e.getLocalizedMessage());
 		}
 	}
-	public void dropDownloadTable()
-	{
-        try {
-        	Statement stmt = con.createStatement();
-			stmt.execute("DROP TABLE " + DOWNLOAD);
+	public void createDownloadTable()
+	{//d41d8cd98f00b204e9800998ecf8427e
+		try {
+	        Statement stmt = con.createStatement();
+	        stmt.execute("CREATE TABLE " + DOWNLOAD + " ("
+	        		+ "url VARCHAR(2083) primary key, "
+	        		+ "createtime TIMESTAMP,"
+	        		+ "state INT, "
+	        		+ "blogId VARCHAR(255),"
+	        		+ "blogName VARCHAR(255),"
+	        		+ "filename VARCHAR(255),"
+	        		+ "filesize BIGINT, "
+	        		+ "ext VARCHAR(64), "
+	        		+ "savepath VARCHAR(255),"
+	        		+ "totalTime BIGINT, "
+	        		+ "priority INT"
+	        		+ ")");	
 	        stmt.close();
 		} catch (SQLException e) {
 			logger.debug("stmt execute." + e.getLocalizedMessage());
@@ -102,19 +153,7 @@ public class H2DBService {
 				int i = 0;
 		        while(rs.next()){
 		        	i++;
-		        	System.out.println("load task:[" 	+ i +"] " 
-		        			 	+ " url:"		+ rs.getString("url") 
-		        			   + " blogId:"		+ rs.getString("blogId") 
-		        			   + " blogName:"	+ rs.getString("blogName") 
-		        			   + " time:" 		+ rs.getTimestamp("createtime")
-		        			   + " state:" 		+ rs.getInt("state")
-		        			   + " filename:" 	+ rs.getString("filename")
-		        			   + " filesize"  	+ rs.getLong("filesize")
-		        			   + " ext:" 		+ rs.getString("ext")
-		        			   + " savepath:" 	+ rs.getString("savepath")
-		        			   + " totalTime:" 	+ rs.getLong("totalTime")
-		        			   + " priority:" 	+ rs.getInt("priority")
-		        			   );
+
 		        	String url = rs.getString("url");
 		 		    String blogId = rs.getString("blogId");
 		 		    String blogName = rs.getString("blogName");
@@ -126,6 +165,19 @@ public class H2DBService {
 		        	String savepath = rs.getString("savepath");
 		        	long totalTime = rs.getLong("totalTime");
 		        	int priority = rs.getInt("priority");
+		        	System.out.println("load task:[" 	+ i +"] " 
+		        		   + " url:"		+ url
+	        			   + " blogId:"		+ blogId
+	        			   + " blogName:"	+ blogName
+	        			   + " time:" 		+ time
+	        			   + " state:" 		+ state
+	        			   + " filename:" 	+ filename
+	        			   + " filesize"  	+ filesize
+	        			   + " ext:" 		+ ext
+	        			   + " savepath:" 	+ savepath
+	        			   + " totalTime:" 	+ totalTime
+	        			   + " priority:" 	+ priority
+	        			   );
 		        	DownloadContext task = new DownloadContext(url,blogId,blogName,filename, filesize, time.getTime(), state,ext, savepath,totalTime,priority);
 		        	tasks.add(task);
 		        }
@@ -267,7 +319,7 @@ public class H2DBService {
 		try {
 	        Statement stmt = con.createStatement();
 	        stmt.execute("CREATE TABLE " + SETTINGS + " ( "
-	        		+"id VARCHAR(255),"
+	        		+"id VARCHAR(256) primary key,"
 	        		+"basePath VARCHAR(255),"
 	        		+"connectTimeout BIGINT,"
 	        		+"readTimeout BIGINT,"
@@ -583,5 +635,35 @@ public class H2DBService {
 		{
 			update(String.format(UPDATE_PROXY_SETTINGS, 0,"",0));
 		}
+	}
+	public String getSchemaMd5(String tableName) throws 
+		ClassNotFoundException, SQLException, NoSuchAlgorithmException, IOException
+	{		
+		String SCHEMA = "SELECT TABLE_NAME,COLUMN_NAME,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH "
+				+ "FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%s'";
+		String QUERY = String.format(SCHEMA, tableName.toUpperCase());
+		//System.out.println(QUERY);
+		Statement stmt = con.createStatement();
+		ResultSet rs = stmt.executeQuery(QUERY);
+		ResultSetMetaData rsmd = rs.getMetaData();
+		int count = rsmd.getColumnCount();
+		MessageDigest complete = MessageDigest.getInstance("MD5");
+		while(rs.next()){
+			for(int i = 1;i<count+1;i++){
+				String s = rs.getString(i);
+				byte[] b = s.getBytes();
+				complete.update(b);
+			}
+		}		
+	    stmt.close();
+	    return getMD5Checksum(complete.digest());
+	}
+	public static String getMD5Checksum(byte[] bytes)
+	{
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < bytes.length; i++) {
+          sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
+        }
+        return sb.toString();
 	}
 }

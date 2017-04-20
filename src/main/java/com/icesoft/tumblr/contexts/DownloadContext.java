@@ -1,6 +1,5 @@
 package com.icesoft.tumblr.contexts;
 
-import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
@@ -8,6 +7,7 @@ import org.apache.log4j.Logger;
 import com.icesoft.tumblr.state.DownloadPriority;
 import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
+import com.icesoft.utils.StringUtils;
 
 
 public class DownloadContext implements IContext{
@@ -37,14 +37,14 @@ public class DownloadContext implements IContext{
 		this.state = state;
 		this.savePath = savePath;
 		this.priority = DownloadPriority.NORMAL;
-		this.setBlogId(blogId);
-		this.setBlogName(blogName);
+		this.blogId = blogId;
+		this.blogName = blogName;
 	}
 	public DownloadContext(String url, String blogId,String blogName,String filename,long filesize, long time, int state,
 			String ext, String savepath, long totalTime, int priority) {
 		this.URL = url;
-		this.setBlogId(blogId);
-		this.setBlogName(blogName);
+		this.blogId = blogId;
+		this.blogName = blogName;
 		this.filename = filename;
 		this.remoteFilesize.set(filesize);
 		this.createTime.set(time);
@@ -123,22 +123,14 @@ public class DownloadContext implements IContext{
 		logger.info(message);
 	}
 	public synchronized String getAbsolutePath(){
-		StringBuffer sb = new StringBuffer();
-		if(getSavePath() != null && !getSavePath().trim().equals(""))
-		{
-			sb.append(getSavePath().trim());
+		String path = null;
+		if(this.savePath==null || this.filename == null || this.blogId == null){
+			path = null;
 		}else{
-			sb.append("./");
-		}
-		if(getFilename() != null && !getFilename().trim().equals(""))
-		{
-			sb.append(File.separator + getFilename().trim());
-		}
-		if(getExt() != null && !getExt().trim().equals(""))
-		{
-			sb.append("." + getExt().trim());
-		}
-		return sb.toString();
+			path = StringUtils.getAbsolutePath(this.savePath, this.filename, this.blogId, this.blogName, this.ext);
+		}		
+		//logger.debug("getAbsolutePath(" + savePath + "," + filename + "," + blogId + "," + blogName + "," + ext + ") = " + path);
+		return path;
 	}
 	public boolean isRun() {
 		return run;
@@ -195,6 +187,8 @@ public class DownloadContext implements IContext{
 		sb.append("Context START: [" + URL + "]\n");
 		sb.append(" savePath:" + savePath);
 		sb.append(" filename:" + filename);
+		sb.append(" blogId:" + blogId);
+		sb.append(" blogName:" + blogName);
 		sb.append(" ext:" + ext);
 		sb.append(" remoteFilesize:" + remoteFilesize);
 		sb.append(" localFilesize:" + localFilesize);
@@ -210,16 +204,16 @@ public class DownloadContext implements IContext{
 		sb.append("Context END  : [" + URL + "]");
 		return sb.toString();
 	}
-	public String getBlogName() {
+	public synchronized String getBlogName() {
 		return blogName;
 	}
-	public void setBlogName(String blogName) {
+	public synchronized void setBlogName(String blogName) {
 		this.blogName = blogName;
 	}
-	public String getBlogId() {
+	public synchronized String getBlogId() {
 		return blogId;
 	}
-	public void setBlogId(String blogId) {
+	public synchronized void setBlogId(String blogId) {
 		this.blogId = blogId;
 	}	
 }
