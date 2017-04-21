@@ -1,6 +1,10 @@
 package com.icesoft.utils;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
@@ -81,5 +85,18 @@ public class StringUtils {
 		}else{
 			return saveLocation + File.separator + blogId + Constants.FILENAME_PARTITION + blogName + Constants.FILENAME_PARTITION + filename + "." + ext;	
 		}				
+	}
+	public static List<String> getURLsFromString(String add){
+		List<String> urls = new ArrayList<String>();
+		Pattern p = Pattern.compile("^(http|www|ftp|)?(://)?(\\w+(-\\w+)*)(\\.(\\w+(-\\w+)*))*((:\\d+)?)(/(\\w+(-\\w+)*))*(\\.?(\\w)*)(\\?)?(((\\w*%)*(\\w*\\?)*(\\w*:)*(\\w*\\+)*(\\w*\\.)*(\\w*&)*(\\w*-)*(\\w*=)*(\\w*%)*(\\w*\\?)*(\\w*:)*(\\w*\\+)*(\\w*\\.)*(\\w*&)*(\\w*-)*(\\w*=)*)*(\\w*)*)$",Pattern.CASE_INSENSITIVE );
+		String[] ss = add.split("\\n");	
+		for(String url : ss){
+			Matcher m = p.matcher(url);    
+	          if(m.find()){  
+	              System.out.println(m.group()); 
+	              urls.add(m.group());
+	          }  
+		}
+		return urls;
 	}
 }

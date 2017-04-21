@@ -19,8 +19,6 @@ import javax.swing.JTable;
 import javax.swing.table.TableRowSorter;
 
 import org.apache.http.pool.PoolStats;
-import org.apache.log4j.Logger;
-
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager;
 import com.icesoft.tumblr.downloader.panel.interfaces.IUpdatable;
@@ -41,7 +39,7 @@ import javax.swing.JProgressBar;
 
 public class DownloadPanel extends JPanel implements IUpdatable{
 	private static final long serialVersionUID = 4111940040655069650L;
-	private static Logger logger = Logger.getLogger(DownloadPanel.class);  
+	//private static Logger logger = Logger.getLogger(DownloadPanel.class);  
 	private JTable table;
 	private DownloadModel model;
 	private TableRowSorter<DownloadModel> sorter;
@@ -49,6 +47,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 	private JProgressBar pbThreads;
 	private JProgressBar pbTasks;
 	private JProgressBar pbMemory;
+	private JButton btnWaiting;
 	public DownloadPanel() {
 		model = new DownloadModel();
 		GridBagLayout gridBagLayout = new GridBagLayout();
@@ -80,10 +79,11 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		gbc_plControl.gridy = 0;
 		add(plControl, gbc_plControl);
 		
-			JButton btnWaiting = new JButton("Active");
+			btnWaiting = new JButton("Waiting");
 			btnWaiting.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					sorter.setRowFilter(new DownloadTaskStateFilter(DownloadState.WAIT));
+					btnWaiting.setText("Waiting [" + table.getRowCount() + "]");
 				}
 			});
 			plControl.add(btnWaiting);
@@ -92,6 +92,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 			btnFinished.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					sorter.setRowFilter(new DownloadTaskStateFilter(DownloadState.COMPLETE));
+					btnFinished.setText("Completed [" + table.getRowCount() + "]");
 				}
 			});
 			plControl.add(btnFinished);
@@ -100,14 +101,16 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 			btnException.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					sorter.setRowFilter(new DownloadTaskStateFilter(DownloadState.EXCEPTION));
+					btnException.setText("Exception [" + table.getRowCount() + "]");
 				}
 			});
 			plControl.add(btnException);
 			
-			JButton btnActive = new JButton("Running");
+			JButton btnActive = new JButton("Active");
 			btnActive.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					sorter.setRowFilter(new DownloadActiveFilter());
+					btnActive.setText("Active [" + table.getRowCount() + "]");
 				}
 			});
 			plControl.add(btnActive);
@@ -116,6 +119,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 			btnAll.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					sorter.setRowFilter(null);
+					btnAll.setText("ALL [" + table.getRowCount() + "]");
 				}
 			});
 			plControl.add(btnAll);

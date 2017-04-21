@@ -51,9 +51,9 @@ public class Config{
 		sb.append("connectTimeout:" + connectTimeout 	+ Constants.ENTER);
 		sb.append("readTimeout:" 	+ readTimeout 		+ Constants.ENTER);
 		sb.append("proxy:" 								+ Constants.ENTER);
-		sb.append(proxy==null?"null":proxy.toString()	+ Constants.ENTER);
+		sb.append((proxy==null?"null":proxy.toString())	+ Constants.ENTER);
 		sb.append("token:"								+ Constants.ENTER);
-		sb.append(token==null?"null":token.toString()	+ Constants.ENTER);
+		sb.append((token==null?"null":token.toString())	+ Constants.ENTER);
 		sb.append("========= Config End   ========="	+ Constants.ENTER);
 		return sb.toString();
 	}	

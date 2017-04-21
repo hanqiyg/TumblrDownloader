@@ -1,7 +1,7 @@
 package com.icesoft.tumblr.downloader.tablemodel;
 
 import java.awt.Component;
-import java.text.SimpleDateFormat;
+
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 

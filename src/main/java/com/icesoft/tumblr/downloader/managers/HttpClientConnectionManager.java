@@ -1,15 +1,19 @@
 package com.icesoft.tumblr.downloader.managers;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.pool.PoolStats;
@@ -54,20 +58,31 @@ public class HttpClientConnectionManager
 		    }
 		};
 	   RequestConfig requestConfig = RequestConfig.custom()
-	            .setConnectionRequestTimeout(SettingService.getInstance().getConnectionTimeout())
-	            .setSocketTimeout(SettingService.getInstance().getReadTimeout())
-	            .setConnectionRequestTimeout(SettingService.getInstance().getReadTimeout())
+	            .setConnectionRequestTimeout(	SettingService.getInstance().getConnectionTimeout())
+	            .setSocketTimeout(				SettingService.getInstance().getReadTimeout())
+	            .setConnectionRequestTimeout(	SettingService.getInstance().getReadTimeout())
 	            .build();
 		connManager = new PoolingHttpClientConnectionManager();
 		connManager.setDefaultMaxPerRoute(5);
 		connManager.setMaxTotal(SettingService.getInstance().getHttpClientCount());
-		client = HttpClientBuilder
-				.create()
-				.setConnectionManager(connManager)
-				.useSystemProperties()				
-				.setDefaultRequestConfig(requestConfig)				  
-				.setKeepAliveStrategy(myStrategy)				
-				.build();
+		HttpHost proxy = getProxy();
+		if(proxy != null){
+			DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
+			client = HttpClients.custom() 
+					.setConnectionManager(connManager)
+					.useSystemProperties()				
+					.setDefaultRequestConfig(requestConfig)
+					.setRoutePlanner(routePlanner)
+					.setKeepAliveStrategy(myStrategy)				
+					.build();
+		}else{
+			client = HttpClients.custom() 
+					.setConnectionManager(connManager)
+					.useSystemProperties()				
+					.setDefaultRequestConfig(requestConfig)
+					.setKeepAliveStrategy(myStrategy)				
+					.build();
+		}
 		monitor = new IdleConnectionMonitor(this);
 		monitor.start();		
 	}
@@ -96,5 +111,11 @@ public class HttpClientConnectionManager
 	}
 	public PoolStats getStats(){
 		return connManager.getTotalStats();
+	}
+	public HttpHost getProxy(){
+		if(SettingService.getInstance().getProxy() != null && SettingService.getInstance().getProxy().type().equals(Proxy.Type.HTTP)){
+			return new HttpHost(((InetSocketAddress)SettingService.getInstance().getProxy().address()).getHostName(), ((InetSocketAddress)SettingService.getInstance().getProxy().address()).getPort(), "http");
+		}
+		return null;
 	}
 }

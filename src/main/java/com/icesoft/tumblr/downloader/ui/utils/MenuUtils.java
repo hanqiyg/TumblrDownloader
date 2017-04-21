@@ -11,11 +11,13 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
+import com.icesoft.tumblr.downloader.configure.Constants;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.tablemodel.DownloadModel;
 import com.icesoft.tumblr.state.DownloadPriority;
 import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
+import com.icesoft.utils.ClipboardUtils;
 
 public class MenuUtils {
 	public static JPopupMenu getDownloadPanelRightButtonMenu(List<IContext> contexts,DownloadModel model) {
@@ -125,6 +127,24 @@ public class MenuUtils {
             }
         }); 
 		right.add(reDownload);
+		
+		JMenuItem copyURL = new JMenuItem("copyURL");  
+		copyURL.addActionListener(new ActionListener() {  
+            public void actionPerformed(ActionEvent evt) {
+            	System.out.println("copy");
+            	StringBuffer sb = new StringBuffer();
+				Iterator<IContext> iter = contexts.iterator();
+				while(iter.hasNext())
+				{
+					IContext context = iter.next();
+					sb.append(context.getURL());
+					sb.append(Constants.ENTER);
+            	}
+				System.out.println(sb.toString());
+				ClipboardUtils.setSystemClipboard(sb.toString());
+            }
+        }); 
+		right.add(copyURL);
 		
 		JMenu priority = new JMenu("priority");  
     	for(DownloadPriority p : DownloadPriority.values())

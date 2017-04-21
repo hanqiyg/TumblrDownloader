@@ -125,6 +125,7 @@ public class DownloadContext implements IContext{
 	public synchronized String getAbsolutePath(){
 		String path = null;
 		if(this.savePath==null || this.filename == null || this.blogId == null){
+			//System.err.println("savePath" + savePath + "filename" + filename + "blogId" + blogId);
 			path = null;
 		}else{
 			path = StringUtils.getAbsolutePath(this.savePath, this.filename, this.blogId, this.blogName, this.ext);

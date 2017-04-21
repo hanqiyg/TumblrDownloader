@@ -20,7 +20,6 @@ import com.icesoft.tumblr.downloader.workers.HttpGetWorker;
 import com.icesoft.tumblr.executors.Contextful;
 import com.icesoft.tumblr.executors.PriorityThreadPoolExecutor;
 import com.icesoft.tumblr.handlers.RejectedExecutionHandlerImpl;
-import com.icesoft.tumblr.model.VideoInfo;
 import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
 

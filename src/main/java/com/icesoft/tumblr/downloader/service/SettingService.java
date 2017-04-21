@@ -7,14 +7,13 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
-import org.apache.log4j.Logger;
+
 import com.icesoft.tumblr.downloader.configure.Config;
 import com.icesoft.tumblr.downloader.configure.TumblrToken;
-import com.icesoft.tumblr.downloader.service.H2DBService;
 
 public class SettingService {
 	private static SettingService instance = new SettingService();
-	private static Logger logger = Logger.getLogger(SettingService.class);
+	//private static Logger logger = Logger.getLogger(SettingService.class);
 	private Config config;
 	
 	private SettingService(){

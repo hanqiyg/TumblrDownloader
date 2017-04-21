@@ -22,5 +22,5 @@ public class DownloadTaskStateFilter extends RowFilter<DownloadModel, Object>{
 			}
 		}
 		return false;
-	}
+	}	
 }

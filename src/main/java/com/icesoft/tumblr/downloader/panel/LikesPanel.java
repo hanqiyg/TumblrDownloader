@@ -5,7 +5,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -118,8 +117,9 @@ public class LikesPanel extends JPanel implements IUpdatable{
 								String saveLocation = SettingService.getInstance().getPath();
 								String id = TumblrServices.getInstance().getBlogId(v);
 								String name = TumblrServices.getInstance().getBlogName(v);
-								DownloadContext video = new DownloadContext(url,DownloadState.WAIT,saveLocation, id , name);
-								DownloadContext po = new DownloadContext(poster,DownloadState.WAIT,saveLocation, id , name);
+								alart(url,saveLocation,id,name);
+								DownloadContext video = new DownloadContext(url,	DownloadState.WAIT,saveLocation,id,name);
+								DownloadContext po 	  = new DownloadContext(poster,	DownloadState.WAIT,saveLocation,id,name);
 								System.out.println(video.toString());
 								System.out.println(po.toString());
 								DownloadManager.getInstance().addNewTask(video);
@@ -136,11 +136,20 @@ public class LikesPanel extends JPanel implements IUpdatable{
 							String saveLocation = SettingService.getInstance().getPath();
 							String id = TumblrServices.getInstance().getBlogId(photoPost);
 							String name = TumblrServices.getInstance().getBlogName(photoPost);
+							alart(url,saveLocation,id,name);
 							DownloadManager.getInstance().addNewTask(new DownloadContext(url,DownloadState.WAIT,saveLocation, id , name));
 						}
 					}
-				}
-				
+				}				
+			}
+
+			private void alart(String url,String saveLocation, String id, String name) {
+				if(saveLocation == null || saveLocation.isEmpty() || saveLocation.equals("null"))
+					System.err.println(url + "=" +saveLocation + "==NULL");
+				if(id == null || id.isEmpty() || id.equals("null"))
+					System.err.println(url + "=" +saveLocation + "==NULL");
+				if(name == null || name.isEmpty() || name.equals("null"))
+					System.err.println(url + "=" +saveLocation + "==NULL");
 			}
 		});
 		panel.add(btnAddAll);
@@ -179,8 +188,6 @@ public class LikesPanel extends JPanel implements IUpdatable{
 		scrollPane.setViewportView(table);
 
 		add(scrollPane, gbc_scrollPane);
-		
-
 	}
 
 	@Override

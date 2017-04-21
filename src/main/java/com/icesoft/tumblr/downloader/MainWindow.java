@@ -15,14 +15,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
-import javax.swing.UnsupportedLookAndFeelException;
-
 import org.apache.log4j.PropertyConfigurator;
 
 import com.icesoft.tumblr.downloader.dialog.ExitDialog;
-import com.icesoft.tumblr.downloader.dialog.ProxyDialog;
 import com.icesoft.tumblr.downloader.managers.DownloadManager;
 import com.icesoft.tumblr.downloader.monitor.UIMonitor;
+import com.icesoft.tumblr.downloader.panel.ConsolePanel;
 import com.icesoft.tumblr.downloader.panel.DownloadPanel;
 import com.icesoft.tumblr.downloader.panel.LikesPanel;
 import com.icesoft.tumblr.downloader.panel.SettingsPanel;
@@ -31,15 +29,29 @@ import com.icesoft.tumblr.downloader.service.SettingService;
 
 
 public class MainWindow {
+	
 	static {
+		try {
+			Class.forName("com.icesoft.tumblr.downloader.service.H2DBService");
+			Class.forName("com.icesoft.tumblr.downloader.service.SettingService");
+			Class.forName("com.icesoft.tumblr.downloader.managers.HttpClientConnectionManager");
+			Class.forName("com.icesoft.tumblr.downloader.managers.DownloadManager");
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		Properties pro = new Properties();
-		pro.put("log4j.rootLogger", "debug,stdout,R,A");
+		pro.put("log4j.rootLogger", "debug,stdout,my,R,A");
+
+		pro.put("log4j.appender.my", "com.icesoft.log4j.Appender");
+		pro.put("log4j.appender.my.layout", "org.apache.log4j.PatternLayout");
+		pro.put("log4j.appender.my.layout.ConversionPattern", "[%-5p] %d{yyyy-MM-dd HH:mm:ss,SSS} method:%l%n%m%n");
 
 		pro.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
 		pro.put("log4j.appender.stdout.Target","System.out");
 		pro.put("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
 		pro.put("log4j.appender.stdout.layout.ConversionPattern", "[%-5p] %d{yyyy-MM-dd HH:mm:ss,SSS} method:%l%n%m%n");
-
+		
 		pro.put("log4j.appender.R", "org.apache.log4j.RollingFileAppender");
 		pro.put("log4j.appender.R.File", SettingService.getInstance().getPath() + File.separator + "logs" + File.separator + "Info.log");
 		pro.put("log4j.appender.R.MaxFileSize", "10000KB");
@@ -64,7 +76,6 @@ public class MainWindow {
 	private LikesPanel likesPanel;
 	private SettingsPanel settingsPanel;
 	private DownloadPanel downloadPanel;
-	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -111,7 +122,7 @@ public class MainWindow {
 		        }
 		    }
 		} catch (Exception e) {
-		}
+		}		
 		initialize();
 		String error = H2DBService.getInstance().init();
 		if(error != null){
@@ -139,12 +150,12 @@ public class MainWindow {
 		likesPanel = new LikesPanel();
 		settingsPanel = new SettingsPanel();
 		downloadPanel = new DownloadPanel();
-		
+		ConsolePanel consolePanel = new ConsolePanel();
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		tabbedPane.add("Likes", likesPanel);
 		tabbedPane.add("Download", downloadPanel);
 		tabbedPane.add("Settings", settingsPanel);
-		
+		tabbedPane.add("Console", consolePanel);
 		GridBagConstraints gbc_tabbedPane = new GridBagConstraints();
 		gbc_tabbedPane.insets = new Insets(0, 0, 5, 0);
 		gbc_tabbedPane.fill = GridBagConstraints.BOTH;
