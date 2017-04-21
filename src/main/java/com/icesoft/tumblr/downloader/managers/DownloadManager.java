@@ -155,8 +155,16 @@ public class DownloadManager {
 			{
 				if(!contexts.contains(context))
 				{
-					context.setState(DownloadState.CREATE);
-					contexts.add(context);
+					if(context.getState().equals(DownloadState.COMPLETE)){
+						context.setLocalFilesize(context.getRemoteFilesize());
+						contexts.add(context);
+					}else
+					if(context.getState().equals(DownloadState.EXCEPTION)){
+						contexts.add(context);
+					}else{
+						context.setState(DownloadState.CREATE);
+						contexts.add(context);
+					}	
 				}
 			}
 		}

@@ -179,7 +179,10 @@ public class MainWindow {
 	    System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire", "debug");
 	    System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");*/
 		
-		//httpclient Enable just context logging		
+		//httpclient Enable just context logging	
+/*		System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
+		System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
+		System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");*/
 	}
 	public void applyPropertie()
 	{

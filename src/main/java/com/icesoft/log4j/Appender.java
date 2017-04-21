@@ -25,7 +25,6 @@ public class Appender  extends AppenderSkeleton {
              message = event.getMessage().toString();
          }
          System.out.println(message);
-
     }
 
     public void close() {

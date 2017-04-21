@@ -3,16 +3,10 @@ package com.icesoft.tumblr.downloader.panel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
-import org.apache.log4j.Appender;
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.Filter;
-import org.apache.log4j.spi.LoggingEvent;
-
 import com.icesoft.tumblr.downloader.TextAreaOutputStream;
 
 import java.awt.GridBagLayout;
 import java.io.PrintStream;
-import java.util.logging.LogRecord;
 import java.awt.GridBagConstraints;
 
 public class ConsolePanel extends JPanel {

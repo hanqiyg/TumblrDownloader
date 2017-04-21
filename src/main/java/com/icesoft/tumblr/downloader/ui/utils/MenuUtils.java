@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 
 import com.icesoft.tumblr.downloader.configure.Constants;
@@ -145,6 +146,7 @@ public class MenuUtils {
             }
         }); 
 		right.add(copyURL);
+
 		
 		JMenu priority = new JMenu("priority");  
     	for(DownloadPriority p : DownloadPriority.values())
@@ -171,6 +173,20 @@ public class MenuUtils {
 			priority.add(sub);
 		}
 		right.add(priority);
+		
+		JMenuItem property = new JMenuItem("Property");
+		property.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Iterator<IContext> iter = contexts.iterator();
+				while(iter.hasNext())
+				{
+					IContext context = iter.next();
+					JOptionPane.showOptionDialog(null, context.toString(), "Property", JOptionPane.CLOSED_OPTION, JOptionPane.INFORMATION_MESSAGE, null, null, context); 
+				}
+			} 
+		});
+		right.add(property);
 		return right;
 	}
 }
