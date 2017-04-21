@@ -163,6 +163,8 @@ public class MainWindow {
 		gbc_tabbedPane.gridy = 0;
 		frame.getContentPane().add(tabbedPane);
 		
+
+		
 		//Properties systemProperties = System.getProperties();
 		//systemProperties.setProperty("socksProxyHost",Settings.getInstance().getProxySettings().getHost());
 		//systemProperties.setProperty("socksProxyPort",String.valueOf(Settings.getInstance().getProxySettings().getPort()));

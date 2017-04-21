@@ -22,6 +22,7 @@ import com.icesoft.tumblr.executors.PriorityThreadPoolExecutor;
 import com.icesoft.tumblr.handlers.RejectedExecutionHandlerImpl;
 import com.icesoft.tumblr.state.DownloadState;
 import com.icesoft.tumblr.state.interfaces.IContext;
+import com.icesoft.utils.FileUtils;
 
 public class DownloadManager {
 	private static Logger logger = Logger.getLogger(DownloadManager.class);  
@@ -155,16 +156,50 @@ public class DownloadManager {
 			{
 				if(!contexts.contains(context))
 				{
-					if(context.getState().equals(DownloadState.COMPLETE)){
-						context.setLocalFilesize(context.getRemoteFilesize());
-						contexts.add(context);
-					}else
-					if(context.getState().equals(DownloadState.EXCEPTION)){
-						contexts.add(context);
-					}else{
-						context.setState(DownloadState.CREATE);
-						contexts.add(context);
-					}	
+					switch(context.getState())
+					{
+					case COMPLETE:		{context.setLocalFilesize(FileUtils.getLocalFileSize(context.getAbsolutePath()));}
+						break;
+					case CREATE:
+						break;
+					case DOWNLOAD:		{
+											context.setState(DownloadState.CREATE);
+											context.setLocalFilesize(FileUtils.getLocalFileSize(context.getAbsolutePath()));
+										}
+						break;
+					case EXCEPTION:		{
+											context.setLocalFilesize(FileUtils.getLocalFileSize(context.getAbsolutePath()));
+										}
+						break;
+					case LOCAL_QUERY:	{
+											context.setState(DownloadState.CREATE);
+											context.setLocalFilesize(FileUtils.getLocalFileSize(context.getAbsolutePath()));
+										}
+						break;
+					case NETWORK_QUERY:	{
+											context.setState(DownloadState.CREATE);
+											context.setLocalFilesize(FileUtils.getLocalFileSize(context.getAbsolutePath()));
+										}
+						break;
+					case PAUSE:			{
+											context.setState(DownloadState.CREATE);
+											context.setLocalFilesize(FileUtils.getLocalFileSize(context.getAbsolutePath()));
+										}
+						break;
+					case RESUME:		{
+											context.setState(DownloadState.CREATE);
+											context.setLocalFilesize(FileUtils.getLocalFileSize(context.getAbsolutePath()));
+										}
+						break;
+					case WAIT:			{
+											context.setState(DownloadState.CREATE);
+											context.setLocalFilesize(FileUtils.getLocalFileSize(context.getAbsolutePath()));
+										}	
+						break;
+					default:
+						break;					
+					}									
+					contexts.add(context);		
 				}
 			}
 		}
