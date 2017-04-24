@@ -47,7 +47,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 	private JProgressBar pbThreads;
 	private JProgressBar pbTasks;
 	private JProgressBar pbMemory;
-	private JButton btnWaiting;
+	private JButton btnWaiting,btnFinished,btnException,btnAll,btnActive;
 	public DownloadPanel() {
 		model = new DownloadModel();
 		GridBagLayout gridBagLayout = new GridBagLayout();
@@ -88,7 +88,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 			});
 			plControl.add(btnWaiting);
 			
-			JButton btnFinished = new JButton("Completed");
+			btnFinished = new JButton("Completed");
 			btnFinished.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					sorter.setRowFilter(new DownloadTaskStateFilter(DownloadState.COMPLETE));
@@ -97,7 +97,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 			});
 			plControl.add(btnFinished);
 			
-			JButton btnException = new JButton("Exception");
+			btnException = new JButton("Exception");
 			btnException.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					sorter.setRowFilter(new DownloadTaskStateFilter(DownloadState.EXCEPTION));
@@ -106,7 +106,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 			});
 			plControl.add(btnException);
 			
-			JButton btnActive = new JButton("Active");
+			btnActive = new JButton("Active");
 			btnActive.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					sorter.setRowFilter(new DownloadActiveFilter());
@@ -115,7 +115,7 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 			});
 			plControl.add(btnActive);
 			
-			JButton btnAll = new JButton("ALL");
+			btnAll = new JButton("ALL");
 			btnAll.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					sorter.setRowFilter(null);
@@ -311,9 +311,46 @@ public class DownloadPanel extends JPanel implements IUpdatable{
 		pbTasks.setString(pool.getCompletedTaskCount() + " / " + pool.getTaskCount());
 		pbTasks.setStringPainted(true);
 	}
-
+	public void updateState(){
+		DownloadModel model =  (DownloadModel) table.getModel();
+		int rowCount = model.getColumnCount();
+		int complete = 0,active = 0,exception = 0,waiting = 0,all = 0;
+		for(int i=0;i<rowCount;i++)
+		{
+			IContext context = model.getContext(i);
+			switch(context.getState())
+			{
+				case COMPLETE:		complete++; all++;
+					break;
+				case CREATE:		waiting++;	all++;
+					break;
+				case DOWNLOAD:		active++;	all++;
+					break;
+				case EXCEPTION:		exception++;all++;
+					break;
+				case LOCAL_QUERY:	active++;	all++;
+					break;
+				case NETWORK_QUERY:	active++;	all++;
+					break;
+				case PAUSE:						all++;
+					break;
+				case RESUME:		active++;	all++;
+					break;
+				case WAIT:			waiting++;	all++;
+					break;
+				default:
+					break;			
+			}						
+		}
+		btnWaiting.setText("Waiting [" + waiting + "]");
+		btnFinished.setText("Complete [" + complete + "]");
+		btnException.setText("Exception [" + exception + "]");
+		btnAll.setText("All [" + all + "]");
+		btnActive.setText("Active [" + active + "]");
+	}
 	@Override
 	public void update() {
+		//updateState();
 		memoryInfo();
 		loadStats();
 		loadThreadsInfo();

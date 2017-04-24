@@ -147,6 +147,7 @@ public class DownloadManager {
 	{
 		H2DBService.getInstance().updateContext(context);
 	}
+	
 	public void loadTasks()
 	{
 		List<IContext> loads = H2DBService.getInstance().loadTask();
@@ -198,7 +199,8 @@ public class DownloadManager {
 						break;
 					default:
 						break;					
-					}									
+					}
+					context.setRun(false);
 					contexts.add(context);		
 				}
 			}

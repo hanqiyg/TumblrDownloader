@@ -45,6 +45,7 @@ public class MainWindow {
 
 		pro.put("log4j.appender.my", "com.icesoft.log4j.Appender");
 		pro.put("log4j.appender.my.layout", "org.apache.log4j.PatternLayout");
+		pro.put("log4j.appender.my.Threshold", "INFO");
 		pro.put("log4j.appender.my.layout.ConversionPattern", "[%-5p] %d{yyyy-MM-dd HH:mm:ss,SSS} method:%l%n%m%n");
 
 		pro.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
@@ -137,7 +138,6 @@ public class MainWindow {
 		DownloadManager.getInstance().loadTasks();
 	}
 	private void initialize() {
-		//services = new TumblrServices();
 		frame = new JFrame();		
 		frame.setBounds(
 					SettingService.getInstance().getWindowX(),
