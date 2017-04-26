@@ -47,5 +47,4 @@
  A[Start] --> B(Y/N)
  B-->|Yes|C(Go on)
  B-->|No| D(Break)
- C-->A
  D-->E(End)
