@@ -40,7 +40,7 @@
 
 		PropertyConfigurator.configure(pro);
  }
- 
+ ```
  ### 甘特图
  ```
  graph TD
@@ -48,3 +48,4 @@
  B-->|Yes|C(Go on)
  B-->|No| D(Break)
  D-->E(End)
+```
