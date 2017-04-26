@@ -3,13 +3,13 @@
 -[ ] Item 2
   -[x] Item 2.1
   -[ ] Item 2.2
- -[x] Item 3
+-[x] Item 3
  
  ### Log4j Config
  ```java
  static 
  {
- 		Properties pro = new Properties();
+		Properties pro = new Properties();
 		pro.put("log4j.rootLogger", "debug,stdout,my,R,A");
 
 		pro.put("log4j.appender.my", "com.icesoft.log4j.Appender");
