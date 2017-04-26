@@ -1,11 +1,11 @@
 ### List
-```
+
 -[x] Item 1
 -[ ] Item 2
   -[x] Item 2.1
-  -[ ] Item 2.2
+  -[] Item 2.2
 -[x] Item 3
-```
+
  ### Log4j Config
  ```java
  static 
