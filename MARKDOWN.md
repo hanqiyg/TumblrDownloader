@@ -1,10 +1,10 @@
 ### List
 
-- [ X ] Item 1
+- [ x] Item 1
 - [ ] Item 2
-  - [ X ] Item 2.1
-  - [] Item 2.2
-- [ X ] Item 3
+  - [ x ] Item 2.1
+  - [ ] Item 2.2
+- [ x ] Item 3
 
  ### Log4j Config
  ```java
